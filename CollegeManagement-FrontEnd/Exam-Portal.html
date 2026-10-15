@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="College Management System — Online Exam Portal">
+<title>Exam Portal — College Management System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="glass-theme.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<style>
+  body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+
+  .portal-card {
+    width: 100%; max-width: 480px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 32px;
+    box-shadow: var(--glass-shadow);
+    padding: 40px 36px;
+  }
+  .portal-card.wide { max-width: 760px; }
+  .portal-card.full { max-width: 1000px; }
+
+  .portal-brand { text-align: center; margin-bottom: 32px; }
+  .brand-icon-lg {
+    width: 64px; height: 64px;
+    background: var(--accent);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px; font-size: 28px;
+    box-shadow: 0 8px 28px var(--accent-glow);
+  }
+  .portal-brand h1 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0; }
+  .portal-brand p  { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+
+  /* Section toggle */
+  .exam-section { display: none; }
+  .exam-section.active { display: block; }
+
+  /* User pill */
+  .user-pill {
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px; padding: 12px 16px; margin-bottom: 24px;
+  }
+  .user-pill .up-name { font-weight: 700; color: var(--text-primary); font-size: 14px; }
+  .user-pill .up-enr  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Timer */
+  .exam-timer {
+    font-size: 22px; font-weight: 700;
+    background: rgba(61,220,151,0.10); border: 1px solid rgba(61,220,151,0.25);
+    color: var(--teal);
+    padding: 8px 20px; border-radius: 999px;
+    font-family: 'Courier New', monospace;
+    transition: 0.3s;
+  }
+  .exam-timer.danger {
+    background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.35);
+    color: #fca5a5; animation: pulseTimer 1s infinite;
+  }
+  @keyframes pulseTimer { 0%,100%{opacity:1} 50%{opacity:0.55} }
+
+  /* Question progress dots */
+  .q-progress { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 24px; }
+  .q-dot {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);
+    color: var(--text-muted); transition: 0.2s;
+  }
+  .q-dot.answered { background: rgba(61,220,151,0.15); border-color: rgba(61,220,151,0.3); color: var(--teal); }
+  .q-dot.current  { background: var(--accent); border-color: transparent; color: #fff; box-shadow: 0 4px 14px var(--accent-glow); }
+
+  /* Question text */
+  .q-num-tag {
+    display: inline-block; background: rgba(255,154,60,0.15);
+    color: var(--accent-start); padding: 3px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; margin-bottom: 10px;
+    border: 1px solid rgba(255,154,60,0.25);
+  }
+  .q-text { font-size: 17px; font-weight: 600; color: var(--text-primary); margin-bottom: 20px; line-height: 1.55; }
+
+  /* Option cards */
+  .option-card {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px; margin-bottom: 10px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 14px; cursor: pointer; transition: 0.2s;
+  }
+  .option-card:hover { border-color: rgba(255,154,60,0.35); background: rgba(255,154,60,0.05); }
+  .option-card.selected {
+    border-color: var(--accent-start); background: rgba(255,154,60,0.12);
+    box-shadow: 0 0 0 1px rgba(255,154,60,0.3);
+  }
+  .option-letter {
+    width: 32px; height: 32px; border-radius: 10px;
+    background: rgba(255,255,255,0.07); display: flex;
+    align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: var(--text-muted); flex-shrink: 0;
+  }
+  .option-card.selected .option-letter { background: var(--accent); color: #fff; box-shadow: 0 2px 8px var(--accent-glow); }
+  .option-text { font-size: 14px; color: var(--text-muted); }
+  .option-card.selected .option-text { color: var(--text-primary); font-weight: 600; }
+
+  /* Result circle */
+  .result-circle {
+    width: 150px; height: 150px; border-radius: 50%;
+    background: rgba(255,154,60,0.10);
+    border: 4px solid transparent;
+    background-clip: padding-box;
+    outline: 4px solid var(--accent-start);
+    outline-offset: -2px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    margin: 0 auto 24px;
+    box-shadow: 0 0 40px var(--accent-glow);
+  }
+  .result-circle .res-pct { font-size: 34px; font-weight: 700; color: var(--text-primary); }
+  .result-circle .res-lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* Nav buttons row */
+  .nav-btns { display: flex; justify-content: space-between; margin-top: 24px; gap: 12px; }
+
+  /* Attempts table */
+  .attempt-divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 24px 0; }
+
+  /* Exam header */
+  .exam-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px; padding-bottom: 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-wrap: wrap; gap: 12px;
+  }
+  .exam-title-txt { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+  .exam-sub-txt   { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Alert inline (inside portal card, visible always when shown) */
+  .portal-alert {
+    padding: 12px 16px; border-radius: 14px; font-size: 13px;
+    margin-bottom: 18px; display: none;
+    line-height: 1.5;
+  }
+  .portal-alert.show { display: block; }
+  .pa-error   { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #fca5a5; }
+  .pa-success { background: rgba(61,220,151,0.12); border: 1px solid rgba(61,220,151,0.35); color: var(--teal); }
+  .pa-warn    { background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.35); color: #fcd34d; }
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="sec-login" class="exam-section active portal-card">
+  <div class="portal-brand">
+    <div class="brand-icon-lg">🎓</div>
+    <h1>Exam Portal</h1>
+    <p>Sign in with your student credentials</p>
+  </div>
+  <div id="alertLogin" class="portal-alert"></div>
+  <div class="form-group">
+    <label class="glass-label">Email Address</label>
+    <input type="email" id="loginEmail" class="glass-input" placeholder="you@college.com">
+  </div>
+  <div class="form-group" style="margin-bottom:24px">
+    <label class="glass-label">Password</label>
+    <input type="password" id="loginPassword" class="glass-input" placeholder="••••••••">
+  </div>
+  <button class="glass-btn-primary" style="width:100%;justify-content:center;padding:14px;" onclick="login()">Sign In →</button>
+</div>
+
+<!-- ═══ JOIN EXAM ═══ -->
+<div id="sec-join" class="exam-section portal-card wide">
+  <div class="portal-brand">
+    <div class="brand-icon-lg">📝</div>
+    <h1>Join Exam</h1>
+    <p>Select course, exam &amp; enter the secret code</p>
+  </div>
+
+  <div class="user-pill">
+    <div>
+      <div class="up-name" id="joinUserName">—</div>
+      <div class="up-enr"  id="joinEnrollNo">—</div>
+    </div>
+    <button class="glass-btn-danger" style="font-size:12px;padding:6px 14px;" onclick="logout()">Logout</button>
+  </div>
+
+  <div id="alertJoin" class="portal-alert"></div>
+
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <div class="form-group" style="flex:1;min-width:180px;">
+      <label class="glass-label">Course</label>
+      <div class="glass-select-wrap">
+        <select id="joinCourseId" class="glass-select" onchange="loadExamsForCourse()"></select>
+      </div>
+    </div>
+    <div class="form-group" style="flex:1;min-width:180px;">
+      <label class="glass-label">Exam</label>
+      <div class="glass-select-wrap">
+        <select id="joinExamId" class="glass-select">
+          <option value="">— Select Exam —</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="form-group" style="margin-bottom:24px">
+    <label class="glass-label">Secret Code</label>
+    <input type="text" id="joinSecretCode" class="glass-input" placeholder="6-digit code from Faculty" maxlength="10" style="text-transform:uppercase;letter-spacing:0.15em;font-size:16px;font-weight:700;">
+  </div>
+  <button class="glass-btn-primary" style="width:100%;justify-content:center;padding:14px;" onclick="joinExam()">🚀 Join Exam</button>
+
+  <hr class="attempt-divider">
+  <div class="glass-label" style="margin-bottom:12px;">📊 My Past Attempts</div>
+  <div class="glass-table-wrap">
+    <table class="glass-table">
+      <thead><tr><th>Exam</th><th>Type</th><th>Score</th><th>%</th><th>Date</th></tr></thead>
+      <tbody id="attemptsTbody">
+        <tr><td colspan="5"><div class="glass-spinner" style="padding:20px"><div class="spinner-ring"></div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ EXAM TAKING ═══ -->
+<div id="sec-exam" class="exam-section portal-card full">
+  <div class="exam-header">
+    <div>
+      <div class="exam-title-txt" id="examTitle">—</div>
+      <div class="exam-sub-txt"  id="examSub">—</div>
+    </div>
+    <div class="exam-timer" id="timerBox">--:--</div>
+  </div>
+
+  <div id="alertExam" class="portal-alert"></div>
+  <div class="q-progress" id="qProgress"></div>
+
+  <div id="qContainer">
+    <div class="q-num-tag" id="qNum">Question 1</div>
+    <div class="q-text" id="qText">—</div>
+    <div id="qOptions"></div>
+  </div>
+
+  <div class="nav-btns">
+    <button class="glass-btn-secondary" id="btnPrev" onclick="prevQuestion()">← Previous</button>
+    <button class="glass-btn-primary" id="btnSubmit" onclick="confirmSubmit()" style="display:none;">✅ Submit Exam</button>
+    <button class="glass-btn-secondary" id="btnNext" onclick="nextQuestion()">Next →</button>
+  </div>
+</div>
+
+<!-- ═══ RESULT ═══ -->
+<div id="sec-result" class="exam-section portal-card">
+  <div class="portal-brand">
+    <div class="brand-icon-lg">🏆</div>
+    <h1 id="resultExamTitle">Exam Result</h1>
+    <p>Your exam has been submitted successfully</p>
+  </div>
+  <div class="result-circle">
+    <div class="res-pct" id="resultPct">0%</div>
+    <div class="res-lbl">Score</div>
+  </div>
+  <div style="text-align:center;margin-bottom:28px;">
+    <div style="font-size:20px;font-weight:700;color:var(--text-primary);margin-bottom:10px;" id="resultScore">0 / 0</div>
+    <span class="glass-badge" id="resultBadge">—</span>
+  </div>
+  <button class="glass-btn-secondary" style="width:100%;justify-content:center;padding:13px;" onclick="goToJoin()">← Back to Exams</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="glass-theme.js"></script>
+<script>
+let _token = localStorage.getItem('token');
+let _role  = localStorage.getItem('role');
+let _user  = localStorage.getItem('user') || 'Student';
+
+let coursesCache = [];
+let currentExam  = null;
+let currentAnswers = {};
+let currentQIndex  = 0;
+let timerInterval  = null;
+let isSubmitting   = false;
+let tabSwitchWarned = false;
+
+// ── Init ──────────────────────────────────────────────────────────────
+if (_token && _role === 'Student') {
+  showSection('join');
+  initJoinSection();
+} else if (_token && _role !== 'Student') {
+  localStorage.clear();
+  showSection('login');
+} else {
+  showSection('login');
+}
+
+function _authHeader() {
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token };
+}
+
+function showSection(name) {
+  $('.exam-section').removeClass('active');
+  $('#sec-' + name).addClass('active');
+}
+
+function showPortalAlert(boxId, msg, type) {
+  const cls = { error: 'pa-error', success: 'pa-success', warn: 'pa-warn' }[type] || 'pa-error';
+  $(boxId).attr('class', 'portal-alert show ' + cls).html(msg);
+  if (type !== 'warn') setTimeout(() => $(boxId).removeClass('show'), 5000);
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────
+function login() {
+  const data = { email: $('#loginEmail').val(), password: $('#loginPassword').val() };
+  $.ajax({
+    url: API_BASE + '/Auth/login', type: 'POST', contentType: 'application/json',
+    data: JSON.stringify(data),
+    success: function(r) {
+      if (r.role !== 'Student') {
+        showPortalAlert('#alertLogin', 'Aa portal student mate j che.', 'error');
+        return;
+      }
+      _token = r.token; _role = r.role; _user = r.user;
+      localStorage.setItem('token', _token);
+      localStorage.setItem('role', _role);
+      localStorage.setItem('user', _user);
+      showSection('join');
+      initJoinSection();
+    },
+    error: function() { showPortalAlert('#alertLogin', 'Invalid email or password.', 'error'); }
+  });
+}
+
+function logout() { localStorage.clear(); location.reload(); }
+
+// ── JOIN SECTION ──────────────────────────────────────────────────────
+function initJoinSection() {
+  $('#joinUserName').text(_user);
+
+  $.ajax({
+    url: API_BASE + '/Student/profile', headers: _authHeader(),
+    success: function(p) {
+      $('#joinEnrollNo').text('Enrollment: ' + p.enrollmentNo);
+      window.studentEnrollmentNo = p.enrollmentNo;
+    },
+    error: function() { $('#joinEnrollNo').text(''); }
+  });
+
+  $.ajax({
+    url: API_BASE + '/Student/courses', headers: _authHeader(),
+    success: function(data) {
+      coursesCache = data;
+      const opts = data.map(c => `<option value="${c.courseId}">${c.courseCode} — ${c.courseName}</option>`).join('');
+      $('#joinCourseId').html(opts || '<option value="">No courses enrolled</option>');
+      if (data.length) loadExamsForCourse();
+    },
+    error: function() { showPortalAlert('#alertJoin', 'Failed to load courses.', 'error'); }
+  });
+
+  loadMyAttempts();
+}
+
+function loadExamsForCourse() {
+  const courseId = $('#joinCourseId').val();
+  if (!courseId) return;
+  $.ajax({
+    url: API_BASE + '/Exam/list/' + courseId, headers: _authHeader(),
+    success: function(exams) {
+      const opts = exams.map(e =>
+        `<option value="${e.examId}">${e.title} (${e.examType} — ${e.totalMarks} marks)</option>`
+      ).join('');
+      $('#joinExamId').html('<option value="">— Select Exam —</option>' + opts);
+    },
+    error: function() { showPortalAlert('#alertJoin', 'Failed to load exams.', 'error'); }
+  });
+}
+
+function joinExam() {
+  const examId     = $('#joinExamId').val();
+  const secretCode = $('#joinSecretCode').val().trim().toUpperCase();
+
+  if (!examId)     { showPortalAlert('#alertJoin', 'Exam select karo.', 'error'); return; }
+  if (!secretCode) { showPortalAlert('#alertJoin', 'Secret code enter karo.', 'error'); return; }
+  if (!window.studentEnrollmentNo) { showPortalAlert('#alertJoin', 'Profile load thai nathi, reload karo.', 'error'); return; }
+
+  $.ajax({
+    url: API_BASE + '/Exam/join', type: 'POST',
+    contentType: 'application/json', headers: _authHeader(),
+    data: JSON.stringify({ examId: parseInt(examId), secretCode, enrollmentNo: window.studentEnrollmentNo }),
+    success: function(r) { startExam(r); },
+    error: function(xhr) {
+      // Gujarati error messages from backend (join window, fee gating) — show in glass portal alert
+      const msg = xhr.responseJSON?.message || 'Join failed.';
+      showPortalAlert('#alertJoin', msg, 'error');
+    }
+  });
+}
+
+// ── EXAM TAKING ───────────────────────────────────────────────────────
+function startExam(data) {
+  currentExam    = data;
+  currentAnswers = {};
+  currentQIndex  = 0;
+  tabSwitchWarned = false;
+
+  $('#examTitle').text(data.title);
+  $('#examSub').text(`${data.examType} • ${data.totalMarks} marks • ${data.questions.length} questions`);
+
+  buildProgress();
+  renderQuestion();
+  startTimer(new Date(data.endDateTime));
+  showSection('exam');
+}
+
+function buildProgress() {
+  let html = '';
+  currentExam.questions.forEach((q, i) => {
+    html += `<div class="q-dot" id="qdot_${i}" onclick="goToQuestion(${i})">${i+1}</div>`;
+  });
+  $('#qProgress').html(html);
+  updateProgressDots();
+}
+
+function updateProgressDots() {
+  currentExam.questions.forEach((q, i) => {
+    let cls = 'q-dot';
+    if (currentAnswers[q.questionId]) cls += ' answered';
+    if (i === currentQIndex)          cls += ' current';
+    $('#qdot_' + i).attr('class', cls);
+  });
+}
+
+function renderQuestion() {
+  const q = currentExam.questions[currentQIndex];
+  $('#qNum').text(`Question ${currentQIndex+1} of ${currentExam.questions.length} (${q.marks} marks)`);
+  $('#qText').text(q.questionText);
+
+  const opts = [
+    { key:'A', text: q.optionA }, { key:'B', text: q.optionB },
+    { key:'C', text: q.optionC }, { key:'D', text: q.optionD }
+  ];
+  let html = '';
+  opts.forEach(o => {
+    const sel = currentAnswers[q.questionId] === o.key ? 'selected' : '';
+    html += `<div class="option-card ${sel}" onclick="selectOption(${q.questionId},'${o.key}')">
+      <div class="option-letter">${o.key}</div>
+      <div class="option-text">${o.text}</div>
+    </div>`;
+  });
+  $('#qOptions').html(html);
+
+  $('#btnPrev').prop('disabled', currentQIndex === 0);
+  if (currentQIndex === currentExam.questions.length - 1) {
+    $('#btnNext').hide(); $('#btnSubmit').show();
+  } else {
+    $('#btnNext').show(); $('#btnSubmit').hide();
+  }
+  updateProgressDots();
+}
+
+function selectOption(questionId, optionKey) {
+  currentAnswers[questionId] = optionKey;
+  renderQuestion();
+}
+
+function goToQuestion(i) { currentQIndex = i; renderQuestion(); }
+function prevQuestion()  { if (currentQIndex > 0) { currentQIndex--; renderQuestion(); } }
+function nextQuestion()  { if (currentQIndex < currentExam.questions.length - 1) { currentQIndex++; renderQuestion(); } }
+
+function startTimer(endTime) {
+  if (timerInterval) clearInterval(timerInterval);
+  function tick() {
+    const diff = Math.floor((endTime - new Date()) / 1000);
+    if (diff <= 0) {
+      clearInterval(timerInterval);
+      $('#timerBox').text('00:00').addClass('danger');
+      showPortalAlert('#alertExam', 'Samay puro thai gayo! Auto-submit thay che...', 'warn');
+      setTimeout(submitExam, 1000);
+      return;
+    }
+    const h = Math.floor(diff/3600);
+    const m = Math.floor((diff%3600)/60);
+    const s = diff%60;
+    let disp = h > 0 ? String(h).padStart(2,'0')+':' : '';
+    disp += String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    $('#timerBox').text(disp);
+    if (diff <= 300) $('#timerBox').addClass('danger');
+  }
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
+
+function confirmSubmit() {
+  const total    = currentExam.questions.length;
+  const answered = Object.keys(currentAnswers).length;
+  const unanswered = total - answered;
+  const body = unanswered > 0
+    ? `⚠️ Tame ${unanswered} question(s) answer nathi karya. Tem chhataye submit karvu che?`
+    : `Tame ${answered}/${total} questions answer karya che. Submit karo?`;
+
+  glassConfirm('Submit Exam', body, submitExam, { btnLabel: 'Submit ✅' });
+}
+
+function submitExam() {
+  if (isSubmitting) return;
+  isSubmitting = true;
+  if (timerInterval) clearInterval(timerInterval);
+
+  const answers = Object.keys(currentAnswers).map(qId => ({
+    questionId:     parseInt(qId),
+    selectedOption: currentAnswers[qId]
+  }));
+
+  $.ajax({
+    url: API_BASE + '/Exam/submit', type: 'POST',
+    contentType: 'application/json', headers: _authHeader(),
+    data: JSON.stringify({ attemptId: currentExam.attemptId, answers }),
+    success: function(r) { isSubmitting = false; showResult(r); },
+    error: function(xhr) {
+      isSubmitting = false;
+      const msg = xhr.responseJSON?.message || 'Submit failed.';
+      showPortalAlert('#alertExam', msg, 'error');
+      setTimeout(goToJoin, 3000);
+    }
+  });
+}
+
+function showResult(r) {
+  $('#resultExamTitle').text(currentExam.title);
+  $('#resultPct').text(r.percentage + '%');
+  $('#resultScore').text(r.totalObtained + ' / ' + r.totalMarks);
+  if (r.percentage >= 40) {
+    $('#resultBadge').attr('class', 'glass-badge badge-success').text('✅ Pass');
+  } else {
+    $('#resultBadge').attr('class', 'glass-badge badge-danger').text('❌ Fail');
+  }
+  showSection('result');
+}
+
+function goToJoin() {
+  currentExam = null; currentAnswers = {};
+  $('#joinSecretCode').val(''); $('#joinExamId').val('');
+  loadMyAttempts();
+  showSection('join');
+}
+
+// ── MY ATTEMPTS ───────────────────────────────────────────────────────
+function loadMyAttempts() {
+  $.ajax({
+    url: API_BASE + '/Exam/my-attempts', headers: _authHeader(),
+    success: function(data) {
+      if (!data.length) {
+        $('#attemptsTbody').html(emptyTableRow(5,'📭','No attempts yet'));
+        return;
+      }
+      let html = '';
+      data.forEach(a => {
+        const d = fmtDate(a.startedAt);
+        const score = a.isSubmitted ? `${a.totalObtained}/${a.totalMarks}` : '—';
+        const pct   = a.isSubmitted ? `${a.percentage}%` : '—';
+        html += `<tr>
+          <td class="td-bold">${a.examTitle}</td>
+          <td class="td-muted">${a.examType}</td>
+          <td>${score}</td>
+          <td>${pct}</td>
+          <td class="td-muted">${d}</td>
+        </tr>`;
+      });
+      $('#attemptsTbody').html(html);
+    },
+    error: function() { $('#attemptsTbody').html(emptyTableRow(5,'⚠️','Failed to load')); }
+  });
+}
+
+// Tab switch detection
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && currentExam && !isSubmitting && !tabSwitchWarned) {
+    tabSwitchWarned = true;
+    showPortalAlert('#alertExam', '⚠️ Tab switch detect thayo! Aa page par raho nahi to exam invalid thay shakay che.', 'warn');
+  }
+});
+</script>
+</body>
+</html>

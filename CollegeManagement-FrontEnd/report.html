@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>College Management System — Reports</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      background: #0d1117;
+      color: #e5e7eb;
+      display: flex;
+    }
+
+    /* ── BG grid ── */
+    .bg-grid {
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 0; pointer-events: none;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 240px; min-height: 100vh;
+      background: rgba(255,255,255,.03);
+      border-right: 1px solid rgba(255,255,255,.07);
+      display: flex; flex-direction: column;
+      padding: 24px 16px;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+    }
+    .sidebar-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; padding: 0 8px; }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #6366f1, #10b981);
+      border-radius: 10px; display: flex; align-items: center;
+      justify-content: center; font-size: 16px; flex-shrink: 0;
+    }
+    .brand-text { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.2; }
+    .brand-sub { font-size: 11px; color: #6b7280; }
+    .nav-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .08em; color: #4b5563; padding: 0 10px; margin: 16px 0 6px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px; cursor: pointer;
+      color: #9ca3af; font-size: 14px; font-weight: 500; transition: .2s;
+      margin-bottom: 2px; border: none; background: none; width: 100%;
+      text-align: left; font-family: 'Outfit', sans-serif; text-decoration: none;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.05); color: #e5e7eb; }
+    .nav-item.active {
+      background: rgba(99,102,241,.15); color: #a5b4fc;
+      border: 1px solid rgba(99,102,241,.2);
+    }
+    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .nav-badge {
+      margin-left: auto; background: #ef4444; color: #fff;
+      font-size: 10.5px; font-weight: 700; border-radius: 999px;
+      padding: 1px 7px; min-width: 18px; text-align: center;
+    }
+    .sidebar-footer {
+      margin-top: auto; padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,.07);
+    }
+    .user-info {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 10px;
+      background: rgba(255,255,255,.04);
+    }
+    .user-avatar {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-size: 13px; font-weight: 700;
+      color: #fff; flex-shrink: 0;
+    }
+    .user-name { font-size: 13px; font-weight: 600; color: #e5e7eb; }
+    .user-role { font-size: 11px; color: #6b7280; }
+    .btn-logout {
+      width: 100%; margin-top: 8px; padding: 9px;
+      background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.2);
+      border-radius: 10px; color: #fca5a5; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: .2s; font-family: 'Outfit', sans-serif;
+    }
+    .btn-logout:hover { background: rgba(239,68,68,.2); }
+
+    /* ── Main ── */
+    .main { margin-left: 240px; flex: 1; padding: 32px; min-height: 100vh; position: relative; z-index: 1; }
+    .topbar { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; }
+    .page-title { font-size: 22px; font-weight: 700; color: #fff; }
+    .page-sub { font-size: 13px; color: #6b7280; margin-top: 3px; }
+
+    /* ── Alert ── */
+    .alert-box { padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; display: none; }
+    .alert-error { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; }
+    .alert-success { background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.3); color: #6ee7b7; }
+
+    /* ── Panel ── */
+    .panel {
+      background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+      border-radius: 16px; padding: 24px; margin-bottom: 24px;
+    }
+    .panel-title {
+      font-size: 15px; font-weight: 600; color: #e5e7eb;
+      margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ── Select + Button ── */
+    .search-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .field-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }
+    .field-label { font-size: 12px; color: #6b7280; font-weight: 500; }
+    .form-select-dark {
+      background: #111827; border: 1px solid rgba(255,255,255,.1); color: #fff;
+      border-radius: 10px; padding: 11px 14px; font-size: 14px; font-family: 'Outfit', sans-serif;
+      appearance: none; cursor: pointer; transition: .2s; width: 100%;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center;
+    }
+    .form-select-dark:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.15); outline: none; }
+    .form-select-dark option { background: #1f2937; color: #fff; }
+    .btn-generate {
+      padding: 11px 24px; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none; border-radius: 10px; color: #fff; font-weight: 600;
+      font-size: 14px; cursor: pointer; transition: .3s; font-family: 'Outfit', sans-serif;
+      white-space: nowrap;
+    }
+    .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99,102,241,.4); }
+    .btn-generate:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    /* ── Student Card ── */
+    .student-header {
+      display: flex; align-items: center; gap: 20px;
+      background: rgba(99,102,241,.08); border: 1px solid rgba(99,102,241,.2);
+      border-radius: 14px; padding: 20px; margin-bottom: 24px;
+    }
+    .student-avatar-big {
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-size: 26px; font-weight: 700;
+      color: #fff; flex-shrink: 0;
+    }
+    .student-meta-name { font-size: 20px; font-weight: 700; color: #fff; }
+    .student-meta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+    .meta-badge {
+      font-size: 12px; padding: 4px 12px; border-radius: 20px;
+      font-weight: 600;
+    }
+    .meta-indigo { background: rgba(99,102,241,.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,.25); }
+    .meta-green  { background: rgba(16,185,129,.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,.25); }
+    .meta-yellow { background: rgba(234,179,8,.12);  color: #fde68a; border: 1px solid rgba(234,179,8,.25); }
+    .meta-cyan   { background: rgba(6,182,212,.12);  color: #67e8f9; border: 1px solid rgba(6,182,212,.25); }
+
+    /* ── Section Tabs ── */
+    .section-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 8px 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.04); color: #9ca3af; font-size: 13px;
+      font-weight: 600; cursor: pointer; transition: .2s; font-family: 'Outfit', sans-serif;
+    }
+    .tab-btn.active {
+      background: rgba(99,102,241,.2); color: #a5b4fc;
+      border-color: rgba(99,102,241,.35);
+    }
+    .tab-btn:hover:not(.active) { background: rgba(255,255,255,.07); color: #e5e7eb; }
+
+    .tab-section { display: none; }
+    .tab-section.active { display: block; }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    thead tr { background: rgba(255,255,255,.05); }
+    thead th { padding: 12px 14px; color: #6b7280; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; text-align: left; border-bottom: 1px solid rgba(255,255,255,.07); }
+    tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); transition: .15s; }
+    tbody tr:hover { background: rgba(255,255,255,.03); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 13px 14px; color: #d1d5db; vertical-align: middle; }
+    .td-course { color: #e5e7eb; font-weight: 600; }
+    .td-code { color: #6b7280; font-size: 12px; }
+
+    /* ── Score pill ── */
+    .score-pill {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 44px; padding: 4px 10px; border-radius: 20px;
+      font-weight: 700; font-size: 13px;
+    }
+    .score-high  { background: rgba(16,185,129,.15); color: #6ee7b7; }
+    .score-mid   { background: rgba(234,179,8,.12);  color: #fde68a; }
+    .score-low   { background: rgba(239,68,68,.12);  color: #fca5a5; }
+
+    /* Attendance bar */
+    .att-bar-wrap { display: flex; align-items: center; gap: 10px; }
+    .att-bar-bg { flex: 1; height: 6px; background: rgba(255,255,255,.07); border-radius: 4px; min-width: 80px; }
+    .att-bar-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
+    .att-pct { font-weight: 700; font-size: 13px; min-width: 42px; }
+
+    /* Fee tag */
+    .fee-paid   { background: rgba(16,185,129,.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,.25); padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .fee-unpaid { background: rgba(239,68,68,.12);  color: #fca5a5; border: 1px solid rgba(239,68,68,.25); padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .fee-overdue { background: rgba(234,179,8,.12); color: #fde68a; border: 1px solid rgba(234,179,8,.25); padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+
+    /* ── Summary cards ── */
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .sum-card {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);
+      border-radius: 12px; padding: 16px;
+    }
+    .sum-label { font-size: 11px; color: #6b7280; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+    .sum-val { font-size: 22px; font-weight: 700; color: #fff; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 40px 20px; color: #4b5563; }
+    .empty-icon { font-size: 40px; margin-bottom: 10px; }
+    .empty-text { font-size: 14px; }
+
+    /* ── Spinner ── */
+    .spinner-wrap { text-align: center; padding: 40px; display: none; }
+    .spinner {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 3px solid rgba(99,102,241,.2);
+      border-top-color: #6366f1; animation: spin .8s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner-txt { font-size: 13px; color: #6b7280; }
+
+    /* Skeleton */
+    .skeleton {
+      background: linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.09) 50%,rgba(255,255,255,.05) 75%);
+      background-size: 200% 100%; animation: shimmer 1.4s infinite;
+      border-radius: 6px;
+    }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* Print button */
+    .btn-print {
+      padding: 9px 18px; background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.1); border-radius: 10px;
+      color: #9ca3af; font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: .2s; font-family: 'Outfit', sans-serif;
+    }
+    .btn-print:hover { background: rgba(255,255,255,.09); color: #e5e7eb; }
+
+    @media print {
+      .sidebar, .search-row, .section-tabs, .topbar .btn-print, .bg-grid, .btn-logout { display: none !important; }
+      .main { margin-left: 0; padding: 16px; }
+      body { background: #fff; color: #000; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="bg-grid"></div>
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">🎓</div>
+    <div>
+      <div class="brand-text">College MS</div>
+      <div class="brand-sub" id="sidebarRoleLabel">Panel</div>
+    </div>
+  </div>
+
+  <!-- Admin nav -->
+  <div id="adminNav">
+    <div class="nav-label">Main</div>
+    <a href="admin.html"       class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="users.html"       class="nav-item"><span class="nav-icon">👥</span> Users</a>
+    <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications</a>
+    <div class="nav-label">Management</div>
+    <a href="departments.html" class="nav-item"><span class="nav-icon">🏛️</span> Departments</a>
+    <a href="courses.html"     class="nav-item"><span class="nav-icon">📚</span> Courses</a>
+    <a href="students.html"    class="nav-item"><span class="nav-icon">🎓</span> Students</a>
+    <a href="Exam.html"        class="nav-item"><span class="nav-icon">📝</span> Exams</a>
+    <a href="StudyMaterial.html" class="nav-item"><span class="nav-icon">📖</span> Study Material</a>
+    <a href="Fees.html"        class="nav-item"><span class="nav-icon">💰</span> Fees</a>
+    <a href="report.html"      class="nav-item active"><span class="nav-icon">📈</span> Reports</a>
+  </div>
+
+  <!-- Faculty nav -->
+  <div id="facultyNav" style="display:none;">
+    <div class="nav-label">Faculty</div>
+    <a href="Faculty.html"     class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="report.html"      class="nav-item active"><span class="nav-icon">📈</span> Reports</a>
+  </div>
+
+  <!-- Student nav -->
+  <div id="studentNav" style="display:none;">
+    <div class="nav-label">Student</div>
+    <a href="student.html"     class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="exam-portal.html" class="nav-item"><span class="nav-icon">📝</span> Exam Portal</a>
+    <a href="report.html"      class="nav-item active"><span class="nav-icon">📈</span> My Report</a>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar" id="avatarLetter">U</div>
+      <div>
+        <div class="user-name" id="sidebarName">User</div>
+        <div class="user-role" id="sidebarRole">—</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="logout()">🚪 Logout</button>
+  </div>
+</aside>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<main class="main">
+  <div id="alertBox" class="alert-box"></div>
+
+  <div class="topbar">
+    <div>
+      <div class="page-title">Student Report 📈</div>
+      <div class="page-sub">Internal Marks, External Marks, Attendance & Fees</div>
+    </div>
+    <button class="btn-print" onclick="window.print()" id="printBtn" style="display:none;">🖨️ Print Report</button>
+  </div>
+
+  <!-- ── Search Panel ── -->
+  <div class="panel">
+    <div class="panel-title">🔍 Select Student</div>
+    <div class="search-row">
+      <div class="field-group">
+        <span class="field-label">Student</span>
+        <select id="studentDropdown" class="form-select-dark">
+          <option value="">— Loading students... —</option>
+        </select>
+      </div>
+      <button class="btn-generate" id="generateBtn" onclick="generateReport()">Generate Report</button>
+    </div>
+  </div>
+
+  <!-- ── Spinner ── -->
+  <div class="spinner-wrap" id="spinnerWrap">
+    <div class="spinner"></div>
+    <div class="spinner-txt">Generating report...</div>
+  </div>
+
+  <!-- ── Report Area ── -->
+  <div id="reportArea" style="display:none;">
+
+    <!-- Student Header Card -->
+    <div class="student-header" id="studentHeader"></div>
+
+    <!-- Tab Nav -->
+    <div class="section-tabs">
+      <button class="tab-btn active" onclick="switchTab('internal')">📘 Internal Marks</button>
+      <button class="tab-btn" onclick="switchTab('external')">📗 External Marks</button>
+      <button class="tab-btn" onclick="switchTab('attendance')">📅 Attendance</button>
+      <button class="tab-btn" onclick="switchTab('fees')">💳 Fees</button>
+    </div>
+
+    <!-- INTERNAL MARKS -->
+    <div class="tab-section active" id="tab-internal">
+      <div class="panel">
+        <div class="panel-title">📘 Internal Marks</div>
+        <div class="summary-grid" id="internalSummary"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Code</th>
+                <th>Int-1</th>
+                <th>Int-2</th>
+                <th>Best</th>
+                <th>Attend.</th>
+                <th>Quiz</th>
+                <th>Notes</th>
+                <th>Viva</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="internalBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXTERNAL MARKS -->
+    <div class="tab-section" id="tab-external">
+      <div class="panel">
+        <div class="panel-title">📗 External Marks</div>
+        <div class="summary-grid" id="externalSummary"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Course Code</th>
+                <th>External Score</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="externalBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div class="tab-section" id="tab-attendance">
+      <div class="panel">
+        <div class="panel-title">📅 Attendance Summary</div>
+        <div class="summary-grid" id="attendanceSummary"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Total Classes</th>
+                <th>Present</th>
+                <th>Absent</th>
+                <th>Attendance %</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- FEES -->
+    <div class="tab-section" id="tab-fees">
+      <div class="panel">
+        <div class="panel-title">💳 Fee Records</div>
+        <div class="summary-grid" id="feesSummary"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Due Date</th>
+                <th>Receipt</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="feesBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /reportArea -->
+
+</main>
+
+<!-- ═══════════ SCRIPT ═══════════ -->
+<script>
+  const baseUrl = "https://localhost:7142/api";
+  const token   = localStorage.getItem("token");
+  const role    = localStorage.getItem("role");
+  const userName = localStorage.getItem("user") || "User";
+
+  // ── Auth check ──
+  if (!token || !["Admin","Faculty","Student"].includes(role)) {
+    location.href = "login.html";
+  }
+
+  // ── Sidebar by role ──
+  $("#adminNav,#facultyNav,#studentNav").hide();
+  if (role === "Admin")   { $("#adminNav").show();   $("#sidebarRoleLabel").text("Admin Panel"); }
+  if (role === "Faculty") { $("#facultyNav").show();  $("#sidebarRoleLabel").text("Faculty Panel"); }
+  if (role === "Student") { $("#studentNav").show();  $("#sidebarRoleLabel").text("Student Portal"); }
+
+  $("#sidebarName").text(userName);
+  $("#sidebarRole").text(role);
+  $("#avatarLetter").text(userName.charAt(0).toUpperCase());
+
+  function showAlert(msg, type) {
+    $("#alertBox").attr("class","alert-box alert-"+type).text(msg).fadeIn(200);
+    setTimeout(() => $("#alertBox").fadeOut(300), 3500);
+  }
+  function logout() { localStorage.clear(); location.href = "login.html"; }
+
+  // ── Score color ──
+  function scoreClass(val, max) {
+    const pct = max ? (val/max)*100 : val;
+    if (pct >= 70) return "score-high";
+    if (pct >= 40) return "score-mid";
+    return "score-low";
+  }
+  function scorePill(val) {
+    const c = val === null || val === undefined ? "score-mid" : (val >= 70 ? "score-high" : val >= 40 ? "score-mid" : "score-low");
+    return `<span class="score-pill ${c}">${val ?? "—"}</span>`;
+  }
+
+  // ── Attendance bar ──
+  function attBar(pct) {
+    const color = pct >= 75 ? "#10b981" : pct >= 60 ? "#f59e0b" : "#ef4444";
+    return `<div class="att-bar-wrap">
+      <div class="att-bar-bg"><div class="att-bar-fill" style="width:${Math.min(pct,100)}%;background:${color};"></div></div>
+      <span class="att-pct" style="color:${color};">${pct}%</span>
+    </div>`;
+  }
+
+  // ── Format date ──
+  function fmtDate(d) {
+    if (!d) return "—";
+    return new Date(d).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" });
+  }
+
+  // ════════════════════════════════════════════
+  // ✅ FIX 1: Correct endpoint — AdminController
+  // ════════════════════════════════════════════
+  const STUDENT_LIST_ENDPOINTS = [
+    "/Admin/student-profiles",  // ✅ AdminController exact route: [HttpGet("student-profiles")]
+  ];
+
+  // ════════════════════════════════════════════
+  // ✅ FIX 2: parseStudentList — studentName field
+  // AdminController return kare: { studentProfileId, studentName, enrollmentNo, department }
+  // ════════════════════════════════════════════
+  function parseStudentList(data) {
+    if (!Array.isArray(data)) data = [];
+    return data.map(s => ({
+      id:   s.studentProfileId || s.StudentProfileId,
+      // ✅ AdminController "studentName" return kare — "name" nahi!
+      name: s.studentName || s.StudentName || s.name || s.Name || "Student",
+      enr:  s.enrollmentNo  || s.EnrollmentNo  || "",
+      // ✅ AdminController direct string return kare — nested object nahi
+      dept: s.department    || s.Department     || ""
+    })).filter(s => s.id);
+  }
+
+  function tryEndpoints(endpoints, index, onSuccess, onFail) {
+    if (index >= endpoints.length) { onFail(); return; }
+    $.ajax({
+      url: baseUrl + endpoints[index],
+      type: "GET",
+      headers: { Authorization: "Bearer " + token },
+      success: function(data) {
+        const list = parseStudentList(data);
+        if (list.length > 0) {
+          onSuccess(list);
+        } else {
+          tryEndpoints(endpoints, index + 1, onSuccess, onFail);
+        }
+      },
+      error: function() {
+        tryEndpoints(endpoints, index + 1, onSuccess, onFail);
+      }
+    });
+  }
+
+  // ════════════════════════════════════════════
+  // ✅ FIX 3: Student role → /Student/profile
+  // StudentController.cs ma: [HttpGet("profile")] → /api/Student/profile
+  // ❌ Wrong hatu: /StudentProfile/my  (404 avto hato)
+  // ════════════════════════════════════════════
+  function loadStudents() {
+    if (role === "Student") {
+      $.ajax({
+        url: baseUrl + "/Student/profile",
+        type: "GET",
+        headers: { Authorization: "Bearer " + token },
+        success: function(sp) {
+          // StudentController response: { studentProfileId, enrollmentNo, semester, name, email, department }
+          if (sp && sp.studentProfileId) {
+            const id   = sp.studentProfileId;
+            const name = sp.name || userName;
+            const enr  = sp.enrollmentNo || "—";
+            const dept = sp.department || "";
+            $("#studentDropdown").html(
+              `<option value="${id}">${name} (${enr}) [${dept}]</option>`
+            );
+            generateReport(); // ✅ Student mate auto-load — dropdown select ni jarur nathi
+          } else {
+            showAlert("Student profile maldo nahi. Admin ne profile banavavanu kaho.", "error");
+            $("#studentDropdown").html(`<option value="">— Profile not found —</option>`);
+          }
+        },
+        error: function(xhr) {
+          const msg = xhr.status === 404
+            ? "Student profile nathi. Admin ne contact karo."
+            : xhr.status === 401
+            ? "Token expire thayo. Logout karo ane fari login karo."
+            : "Profile load nahi thayo.";
+          showAlert(msg, "error");
+          $("#studentDropdown").html(`<option value="">— Error loading profile —</option>`);
+        }
+      });
+    } else {
+      // Admin / Faculty — dropdown ma badha students
+      loadAllStudentsDropdown(false);
+    }
+  }
+
+  function loadAllStudentsDropdown(autoSelect) {
+    $("#studentDropdown").html(`<option value="">— Loading... —</option>`);
+
+    tryEndpoints(STUDENT_LIST_ENDPOINTS, 0,
+      function onSuccess(list) {
+        let opts = `<option value="">— Select a student —</option>`;
+        list.forEach(s => {
+          const label = [s.name, s.enr ? `(${s.enr})` : "", s.dept ? `[${s.dept}]` : ""].filter(Boolean).join(" ");
+          opts += `<option value="${s.id}">${label}</option>`;
+        });
+        $("#studentDropdown").html(opts);
+        if (autoSelect && list.length === 1) {
+          $("#studentDropdown").val(list[0].id);
+          generateReport();
+        }
+      },
+      function onFail() {
+        $("#studentDropdown").html(`<option value="">— No students found —</option>`);
+        showAlert("Student list load nahi thayo. StudentProfile endpoint check karo.", "error");
+      }
+    );
+  }
+
+  // ── Tabs ──
+  function switchTab(name) {
+    $(".tab-btn").removeClass("active");
+    $(".tab-section").removeClass("active");
+    $(`#tab-${name}`).addClass("active");
+    $(`.tab-btn[onclick="switchTab('${name}')"]`).addClass("active");
+  }
+
+  // ── Generate Report ──
+  function generateReport() {
+    const id = $("#studentDropdown").val();
+    if (!id) { showAlert("Student select karo pahela.", "error"); return; }
+
+    $("#reportArea").hide();
+    $("#spinnerWrap").show();
+    $("#generateBtn").prop("disabled", true);
+
+    $.ajax({
+      url: baseUrl + "/Report/student/" + id,
+      type: "GET",
+      headers: { Authorization: "Bearer " + token },
+      success: function(r) {
+        $("#spinnerWrap").hide();
+        $("#generateBtn").prop("disabled", false);
+        renderReport(r);
+        $("#reportArea").fadeIn(300);
+        $("#printBtn").show();
+        switchTab('internal');
+      },
+      error: function(xhr) {
+        $("#spinnerWrap").hide();
+        $("#generateBtn").prop("disabled", false);
+        const msg = xhr.responseJSON?.message || "Report load karta error aavyo.";
+        showAlert(msg, "error");
+      }
+    });
+  }
+
+  // ── Render ──
+  function renderReport(r) {
+    const s = r.student;
+
+    // ─ Header ─
+    const initial = (s.name || "?").charAt(0).toUpperCase();
+    $("#studentHeader").html(`
+      <div class="student-avatar-big">${initial}</div>
+      <div>
+        <div class="student-meta-name">${s.name}</div>
+        <div class="student-meta-row">
+          <span class="meta-badge meta-indigo">📋 ${s.enrollmentNo}</span>
+          <span class="meta-badge meta-green">🏛️ ${s.department}</span>
+          <span class="meta-badge meta-yellow">📅 Semester ${s.semester}</span>
+          <span class="meta-badge meta-cyan">✉️ ${s.email}</span>
+        </div>
+      </div>
+    `);
+
+    // ─ Internal Marks ─
+    const intData = r.internalMarks || [];
+    let intRows = "";
+    let intTotalSum = 0;
+    intData.forEach(m => {
+      intTotalSum += (m.totalInternal || 0);
+      intRows += `<tr>
+        <td class="td-course">${m.course}</td>
+        <td class="td-code">${m.courseCode}</td>
+        <td>${scorePill(m.internal1Score)}</td>
+        <td>${scorePill(m.internal2Score)}</td>
+        <td>${scorePill(m.bestInternalScore)}</td>
+        <td>${scorePill(m.attendanceMarks)}</td>
+        <td>${scorePill(m.quizMarks)}</td>
+        <td>${scorePill(m.lectureNoteMarks)}</td>
+        <td>${scorePill(m.vivaMarks)}</td>
+        <td>${scorePill(m.totalInternal)}</td>
+      </tr>`;
+    });
+    if (!intRows) intRows = emptyRow(10, "No internal marks found");
+    $("#internalBody").html(intRows);
+    $("#internalSummary").html(`
+      <div class="sum-card"><div class="sum-label">Total Courses</div><div class="sum-val">${intData.length}</div></div>
+      <div class="sum-card"><div class="sum-label">Total Internal</div><div class="sum-val">${intTotalSum.toFixed(1)}</div></div>
+      <div class="sum-card"><div class="sum-label">Avg / Course</div><div class="sum-val">${intData.length ? (intTotalSum/intData.length).toFixed(1) : "—"}</div></div>
+    `);
+
+    // ─ External Marks ─
+    const extData = r.externalMarks || [];
+    let extRows = "";
+    let extSum = 0;
+    let extPass = 0;
+    extData.forEach(m => {
+      extSum += (m.externalScore || 0);
+      const pass = (m.externalScore || 0) >= 40;
+      if (pass) extPass++;
+      extRows += `<tr>
+        <td class="td-course">${m.course}</td>
+        <td class="td-code">${m.courseCode}</td>
+        <td>${scorePill(m.externalScore)}</td>
+        <td><span class="${pass ? 'fee-paid' : 'fee-unpaid'}">${pass ? "✅ Pass" : "❌ Fail"}</span></td>
+      </tr>`;
+    });
+    if (!extRows) extRows = emptyRow(4, "No external marks found");
+    $("#externalBody").html(extRows);
+    $("#externalSummary").html(`
+      <div class="sum-card"><div class="sum-label">Subjects</div><div class="sum-val">${extData.length}</div></div>
+      <div class="sum-card"><div class="sum-label">Total Score</div><div class="sum-val">${extSum}</div></div>
+      <div class="sum-card"><div class="sum-label">Passed</div><div class="sum-val" style="color:#6ee7b7;">${extPass}</div></div>
+      <div class="sum-card"><div class="sum-label">Failed</div><div class="sum-val" style="color:#fca5a5;">${extData.length - extPass}</div></div>
+    `);
+
+    // ─ Attendance ─
+    const attData = r.attendanceSummary || [];
+    let attRows = "";
+    let attTotalClasses = 0, attTotalPresent = 0;
+    attData.forEach(a => {
+      attTotalClasses += a.total;
+      attTotalPresent += a.present;
+      attRows += `<tr>
+        <td class="td-course">${a.course}</td>
+        <td>${a.total}</td>
+        <td>${a.present}</td>
+        <td>${a.total - a.present}</td>
+        <td>${attBar(a.percentage)}</td>
+      </tr>`;
+    });
+    if (!attRows) attRows = emptyRow(5, "No attendance data found");
+    const overallAtt = attTotalClasses ? Math.round(attTotalPresent/attTotalClasses*100) : 0;
+    const attStatus  = overallAtt >= 75 ? "✅ Eligible" : "⚠️ Short";
+    const attColor   = overallAtt >= 75 ? "#6ee7b7" : "#fca5a5";
+    $("#attendanceBody").html(attRows);
+    $("#attendanceSummary").html(`
+      <div class="sum-card"><div class="sum-label">Total Classes</div><div class="sum-val">${attTotalClasses}</div></div>
+      <div class="sum-card"><div class="sum-label">Present</div><div class="sum-val" style="color:#6ee7b7;">${attTotalPresent}</div></div>
+      <div class="sum-card"><div class="sum-label">Absent</div><div class="sum-val" style="color:#fca5a5;">${attTotalClasses - attTotalPresent}</div></div>
+      <div class="sum-card"><div class="sum-label">Overall %</div><div class="sum-val" style="color:${attColor};">${overallAtt}%</div></div>
+      <div class="sum-card"><div class="sum-label">Status</div><div class="sum-val" style="font-size:15px;color:${attColor};">${attStatus}</div></div>
+    `);
+
+    // ─ Fees ─
+    const feeData = r.fees || [];
+    let feeRows = "";
+    let feePaid = 0, feeUnpaid = 0, feePaidAmt = 0, feeUnpaidAmt = 0;
+    feeData.forEach(f => {
+      if (f.isPaid) { feePaid++; feePaidAmt += (f.amount || 0); }
+      else          { feeUnpaid++; feeUnpaidAmt += (f.amount || 0); }
+      const isOverdue = !f.isPaid && new Date(f.dueDate) < new Date();
+      let statusHtml = f.isPaid
+        ? `<span class="fee-paid">✅ Paid</span>`
+        : isOverdue
+          ? `<span class="fee-overdue">⚠️ Overdue</span>`
+          : `<span class="fee-unpaid">❌ Unpaid</span>`;
+      feeRows += `<tr>
+        <td>${f.feeId}</td>
+        <td>${f.description || "—"}</td>
+        <td>₹${(f.amount||0).toLocaleString("en-IN")}</td>
+        <td>${fmtDate(f.dueDate)}</td>
+        <td>${f.receiptNumber || "—"}</td>
+        <td>${statusHtml}</td>
+      </tr>`;
+    });
+    if (!feeRows) feeRows = emptyRow(6, "No fee records found");
+    $("#feesBody").html(feeRows);
+    $("#feesSummary").html(`
+      <div class="sum-card"><div class="sum-label">Total Records</div><div class="sum-val">${feeData.length}</div></div>
+      <div class="sum-card"><div class="sum-label">Paid Amount</div><div class="sum-val" style="color:#6ee7b7;">₹${feePaidAmt.toLocaleString("en-IN")}</div></div>
+      <div class="sum-card"><div class="sum-label">Unpaid Amount</div><div class="sum-val" style="color:#fca5a5;">₹${feeUnpaidAmt.toLocaleString("en-IN")}</div></div>
+      <div class="sum-card"><div class="sum-label">Paid</div><div class="sum-val" style="color:#6ee7b7;">${feePaid}</div></div>
+      <div class="sum-card"><div class="sum-label">Pending</div><div class="sum-val" style="color:#fca5a5;">${feeUnpaid}</div></div>
+    `);
+  }
+
+  function emptyRow(cols, msg) {
+    return `<tr><td colspan="${cols}" class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">${msg}</div></td></tr>`;
+  }
+
+  // ── Init ──
+  $(function() { loadStudents(); });
+</script>
+</body>
+</html>

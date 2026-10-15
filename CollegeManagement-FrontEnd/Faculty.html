@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Management System — Faculty</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            background: #0d1117;
+            color: #e5e7eb;
+            display: flex;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 240px;
+            min-height: 100vh;
+            background: rgba(255,255,255,.03);
+            border-right: 1px solid rgba(255,255,255,.07);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 32px;
+            padding: 0 8px;
+        }
+
+        .brand-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #6366f1, #10b981);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; flex-shrink: 0;
+        }
+
+        .brand-text { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.2; }
+        .brand-sub  { font-size: 11px; color: #6b7280; }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: #4b5563;
+            padding: 0 10px;
+            margin: 16px 0 6px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: #9ca3af;
+            font-size: 14px;
+            font-weight: 500;
+            transition: .2s;
+            margin-bottom: 2px;
+            border: none; background: none; width: 100%; text-align: left;
+        }
+
+        .nav-item:hover { background: rgba(255,255,255,.05); color: #e5e7eb; }
+
+        .nav-item.active {
+            background: rgba(99,102,241,.15);
+            color: #a5b4fc;
+            border: 1px solid rgba(99,102,241,.2);
+        }
+
+        .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,.07);
+        }
+
+        .user-info {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 10px; border-radius: 10px;
+            background: rgba(255,255,255,.04);
+        }
+
+        .user-avatar {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 50%; display: flex;
+            align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; color: #fff;
+            flex-shrink: 0;
+        }
+
+        .user-name  { font-size: 13px; font-weight: 600; color: #e5e7eb; }
+        .user-role  { font-size: 11px; color: #6b7280; }
+
+        .btn-logout {
+            width: 100%; margin-top: 8px; padding: 9px;
+            background: rgba(239,68,68,.1);
+            border: 1px solid rgba(239,68,68,.2);
+            border-radius: 10px; color: #fca5a5;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: .2s;
+        }
+
+        .btn-logout:hover { background: rgba(239,68,68,.2); }
+
+        /* ── Main ── */
+        .main {
+            margin-left: 240px;
+            flex: 1;
+            padding: 32px;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 28px;
+        }
+
+        .page-title { font-size: 22px; font-weight: 700; color: #fff; }
+        .page-sub   { font-size: 13px; color: #6b7280; margin-top: 3px; }
+
+        /* ── Cards ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .stat-label { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+        .stat-val   { font-size: 26px; font-weight: 700; color: #fff; }
+        .stat-icon  { font-size: 22px; margin-bottom: 10px; }
+
+        /* ── Panel ── */
+        .panel {
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .panel-title {
+            font-size: 16px; font-weight: 600; color: #e5e7eb;
+            margin-bottom: 18px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* ── Form controls ── */
+        .form-label-c { color: #9ca3af; font-size: 13px; margin-bottom: 5px; display: block; }
+
+        .form-control, .form-select {
+            background: #111827;
+            border: 1px solid rgba(255,255,255,.1);
+            color: #fff;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: 'Outfit', sans-serif;
+            transition: .2s;
+            width: 100%;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background: #1f2937;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99,102,241,.15);
+            color: #fff; outline: none;
+        }
+
+        .form-control::placeholder { color: #4b5563; }
+
+        .form-select option { background: #1f2937; }
+
+        .row-gap { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+
+        .btn-primary-c {
+            padding: 10px 22px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none; border-radius: 10px; color: #fff;
+            font-weight: 600; font-size: 14px; cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            transition: .3s;
+        }
+
+        .btn-primary-c:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99,102,241,.4); }
+
+        .btn-success-c {
+            padding: 10px 22px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none; border-radius: 10px; color: #fff;
+            font-weight: 600; font-size: 14px; cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            transition: .3s;
+        }
+
+        .btn-success-c:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,.4); }
+
+        /* ── Table ── */
+        .table-wrap { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+        thead th {
+            background: rgba(255,255,255,.05);
+            color: #9ca3af; font-weight: 600;
+            padding: 10px 14px; text-align: left;
+            white-space: nowrap;
+        }
+
+        thead th:first-child { border-radius: 8px 0 0 8px; }
+        thead th:last-child  { border-radius: 0 8px 8px 0; }
+
+        tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); transition: .15s; }
+        tbody tr:hover { background: rgba(255,255,255,.03); }
+        tbody td { padding: 11px 14px; color: #d1d5db; vertical-align: middle; }
+
+        .badge-present {
+            background: rgba(16,185,129,.15);
+            color: #6ee7b7;
+            border: 1px solid rgba(16,185,129,.25);
+            padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+
+        .badge-absent {
+            background: rgba(239,68,68,.12);
+            color: #fca5a5;
+            border: 1px solid rgba(239,68,68,.25);
+            padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+
+        .badge-pct {
+            background: rgba(99,102,241,.15);
+            color: #a5b4fc;
+            border: 1px solid rgba(99,102,241,.25);
+            padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+
+        /* ── Alert ── */
+        .alert-box {
+            padding: 10px 14px; border-radius: 10px; font-size: 13px;
+            margin-bottom: 14px; display: none;
+        }
+
+        .alert-error   { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; }
+        .alert-success { background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.3); color: #6ee7b7; }
+
+        /* ── Section visibility ── */
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* ── Empty state ── */
+        .empty-state { text-align: center; padding: 40px 20px; color: #4b5563; }
+        .empty-state .empty-icon { font-size: 36px; margin-bottom: 12px; }
+        .empty-state p { font-size: 14px; }
+
+        /* ── Bg grid ── */
+        .bg-grid {
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0; pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-grid"></div>
+
+    <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">🎓</div>
+            <div>
+                <div class="brand-text">College MS</div>
+                <div class="brand-sub">Faculty Portal</div>
+            </div>
+        </div>
+
+        <div class="nav-label">Menu</div>
+
+        <button class="nav-item active" onclick="showSection('dashboard')">
+            <span class="nav-icon">🏠</span> Dashboard
+        </button>
+        <button class="nav-item" onclick="showSection('courses')">
+            <span class="nav-icon">📚</span> Courses
+        </button>
+        <button class="nav-item" onclick="showSection('attendance')">
+            <span class="nav-icon">✅</span> Attendance
+        </button>
+        <button class="nav-item" onclick="showSection('marks')">
+            <span class="nav-icon">📝</span> Marks
+        </button>
+        <button class="nav-item" onclick="showSection('viewAttendance')">
+            <span class="nav-icon">📊</span> View Attendance
+        </button>
+        <button class="nav-item" onclick="showSection('viewMarks')">
+            <span class="nav-icon">🏆</span> View Marks
+        </button>
+        <a href="Exam.html" class="nav-item" style="text-decoration: none;">
+            <span class="nav-icon">📝</span> Exams
+        </a>
+        <a href="StudyMaterial.html" class="nav-item" style="text-decoration: none;">
+            <span class="nav-icon">📖</span> Study Material
+        </a>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="avatarLetter">F</div>
+                <div>
+                    <div class="user-name" id="userName">Faculty</div>
+                    <div class="user-role">Staff Member</div>
+                </div>
+            </div>
+            <button class="btn-logout" onclick="logout()">🚪 Logout</button>
+        </div>
+    </aside>
+
+    <!-- ═══════════════════ MAIN ═══════════════════ -->
+    <main class="main">
+        <div id="alertBox" class="alert-box"></div>
+
+        <!-- ── DASHBOARD ── -->
+        <div id="sec-dashboard" class="section active">
+            <div class="topbar">
+                <div>
+                    <div class="page-title">Welcome back 👋</div>
+                    <div class="page-sub" id="dashGreet">Loading...</div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📚</div>
+                    <div class="stat-label">Total Courses</div>
+                    <div class="stat-val" id="statCourses">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👨‍🎓</div>
+                    <div class="stat-label">Quick Access</div>
+                    <div class="stat-val" style="font-size:14px;color:#6b7280;padding-top:6px;">Use sidebar menu</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">📋 All Courses</div>
+                <div class="table-wrap">
+                    <table id="dashCoursesTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Course Code</th>
+                                <th>Course Name</th>
+                                <th>Department</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashCoursesTbody">
+                            <tr><td colspan="4"><div class="empty-state"><div class="empty-icon">⏳</div><p>Loading courses...</p></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── COURSES ── -->
+        <div id="sec-courses" class="section">
+            <div class="topbar">
+                <div>
+                    <div class="page-title">📚 Courses</div>
+                    <div class="page-sub">Browse all available courses</div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">Course List</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>#</th><th>Course Code</th><th>Course Name</th><th>Department</th></tr>
+                        </thead>
+                        <tbody id="coursesTbody">
+                            <tr><td colspan="4"><div class="empty-state"><div class="empty-icon">⏳</div><p>Loading...</p></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── MARK ATTENDANCE ── -->
+        <div id="sec-attendance" class="section">
+            <div class="topbar">
+                <div>
+                    <div class="page-title">✅ Mark Attendance</div>
+                    <div class="page-sub">Select a course, then mark student attendance</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">📌 Step 1 — Select Course & Date</div>
+                <div class="row-gap">
+                    <div>
+                        <label class="form-label-c">Course</label>
+                        <select id="attCourseId" class="form-select" onchange="loadStudentsForAtt()">
+                            <option value="">— Select Course —</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label-c">Date</label>
+                        <input type="date" id="attDate" class="form-control">
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" id="attStudentsPanel" style="display:none;">
+                <div class="panel-title">📌 Step 2 — Mark Students</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>#</th><th>Enrollment No</th><th>Name</th><th>Email</th><th>Semester</th><th>Present?</th><th>Action</th></tr>
+                        </thead>
+                        <tbody id="attStudentsTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── MARKS ── -->
+        <div id="sec-marks" class="section">
+            <div class="topbar">
+                <div>
+                    <div class="page-title">📝 Add / Update Marks</div>
+                    <div class="page-sub">Select course, student, exam type and enter marks</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">📌 Step 1 — Select Course</div>
+                <div>
+                    <label class="form-label-c">Course</label>
+                    <select id="markCourseId" class="form-select" style="max-width:340px;" onchange="loadStudentsForMarks()">
+                        <option value="">— Select Course —</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="panel" id="marksFormPanel" style="display:none;">
+                <div class="panel-title">📌 Step 2 — Enter Marks</div>
+                <div class="row-gap">
+                    <div>
+                        <label class="form-label-c">Student</label>
+                        <select id="markEnrollmentId" class="form-select"></select>
+                    </div>
+                    <div>
+                        <label class="form-label-c">Exam Type</label>
+                        <select id="markExamType" class="form-select">
+                            <option value="Internal">Internal</option>
+                            <option value="External">External</option>
+                            <option value="Practical">Practical</option>
+                            <option value="Assignment">Assignment</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label-c">Obtained Marks</label>
+                        <input type="number" id="markObtained" class="form-control" placeholder="e.g. 75" min="0">
+                    </div>
+                    <div>
+                        <label class="form-label-c">Total Marks</label>
+                        <input type="number" id="markTotal" class="form-control" placeholder="e.g. 100" min="1">
+                    </div>
+                </div>
+                <button class="btn-success-c" onclick="submitMarks()">💾 Save Marks</button>
+            </div>
+        </div>
+
+        <!-- ── VIEW ATTENDANCE ── -->
+        <div id="sec-viewAttendance" class="section">
+            <div class="topbar">
+                <div>
+                    <div class="page-title">📊 View Attendance</div>
+                    <div class="page-sub">Attendance records by course</div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">Filter</div>
+                <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+                    <div style="flex:1;min-width:200px;">
+                        <label class="form-label-c">Course</label>
+                        <select id="viewAttCourseId" class="form-select">
+                            <option value="">— Select Course —</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary-c" onclick="loadAttendanceReport()">🔍 Load Records</button>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">Attendance Records</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>#</th><th>Name</th><th>Enrollment No</th><th>Course</th><th>Date</th><th>Status</th></tr>
+                        </thead>
+                        <tbody id="viewAttTbody">
+                            <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📭</div><p>Select a course to load records.</p></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── VIEW MARKS ── -->
+        <div id="sec-viewMarks" class="section">
+            <div class="topbar">
+                <div>
+                    <div class="page-title">🏆 View Marks</div>
+                    <div class="page-sub">Marks and percentage by course</div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">Filter</div>
+                <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+                    <div style="flex:1;min-width:200px;">
+                        <label class="form-label-c">Course</label>
+                        <select id="viewMarkCourseId" class="form-select">
+                            <option value="">— Select Course —</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary-c" onclick="loadMarksReport()">🔍 Load Records</button>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">Marks Records</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>#</th><th>Name</th><th>Enrollment No</th><th>Course</th><th>Exam Type</th><th>Obtained</th><th>Total</th><th>Percentage</th></tr>
+                        </thead>
+                        <tbody id="viewMarksTbody">
+                            <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📭</div><p>Select a course to load records.</p></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ═══════════════════ SCRIPT ═══════════════════ -->
+    <script>
+        const baseUrl = "https://localhost:7142/api";
+        const token   = localStorage.getItem("token");
+        const user    = localStorage.getItem("user") || "Faculty";
+
+        // Auth guard
+        if (!token) location.href = "Login.html";
+
+        // Set user info
+        $("#userName").text(user);
+        $("#avatarLetter").text(user.charAt(0).toUpperCase());
+        $("#dashGreet").text("Hello, " + user + "! Here's your overview.");
+        $("#attDate").val(new Date().toISOString().split("T")[0]);
+
+        function authHeader() {
+            return { "Content-Type": "application/json", "Authorization": "Bearer " + token };
+        }
+
+        function showAlert(msg, type) {
+            $("#alertBox").attr("class", "alert-box alert-" + type).text(msg).fadeIn(200);
+            setTimeout(() => $("#alertBox").fadeOut(300), 3500);
+        }
+
+        function logout() {
+            localStorage.clear();
+            location.href = "Login.html";
+        }
+
+        // ── Section nav ──
+        function showSection(name) {
+            $(".section").removeClass("active");
+            $(".nav-item").removeClass("active");
+            $("#sec-" + name).addClass("active");
+            $(".nav-item").filter(function () {
+                return $(this).text().trim().toLowerCase().includes(name.toLowerCase().replace(/([A-Z])/g, ' $1').toLowerCase());
+            }).addClass("active");
+
+            if (name === "dashboard" || name === "courses") loadCourses(name);
+        }
+
+        // ── Load all courses (used in multiple places) ──
+        let coursesCache = [];
+
+        function loadCourses(target) {
+            $.ajax({
+                url: baseUrl + "/Staff/courses",
+                headers: authHeader(),
+                success: function (data) {
+                    coursesCache = data;
+                    $("#statCourses").text(data.length);
+                    populateCourseTable("#dashCoursesTbody", data);
+                    populateCourseTable("#coursesTbody", data);
+                    populateCourseDropdowns(data);
+                },
+                error: function () { showAlert("Failed to load courses", "error"); }
+            });
+        }
+
+        function populateCourseTable(selector, data) {
+            if (!data.length) {
+                $(selector).html('<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">📭</div><p>No courses found.</p></div></td></tr>');
+                return;
+            }
+            let html = "";
+            data.forEach((c, i) => {
+                html += `<tr>
+                    <td>${i + 1}</td>
+                    <td><span style="background:rgba(99,102,241,.15);color:#a5b4fc;padding:3px 8px;border-radius:6px;font-size:12px;font-weight:600;">${c.courseCode}</span></td>
+                    <td>${c.courseName}</td>
+                    <td>${c.department}</td>
+                </tr>`;
+            });
+            $(selector).html(html);
+        }
+
+        function populateCourseDropdowns(data) {
+            const opts = data.map(c => `<option value="${c.courseId}">${c.courseCode} — ${c.courseName}</option>`).join("");
+            ["#attCourseId", "#markCourseId", "#viewAttCourseId", "#viewMarkCourseId"].forEach(sel => {
+                $(sel).html('<option value="">— Select Course —</option>' + opts);
+            });
+        }
+
+        // ── Load students for attendance ──
+        function loadStudentsForAtt() {
+            const courseId = $("#attCourseId").val();
+            if (!courseId) { $("#attStudentsPanel").hide(); return; }
+
+            $.ajax({
+                url: baseUrl + "/Staff/course/" + courseId + "/students",
+                headers: authHeader(),
+                success: function (students) {
+                    if (!students.length) {
+                        $("#attStudentsTbody").html('<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">👥</div><p>No students enrolled in this course.</p></div></td></tr>');
+                        $("#attStudentsPanel").show();
+                        return;
+                    }
+                    let html = "";
+                    students.forEach((s, i) => {
+                        html += `<tr>
+                            <td>${i + 1}</td>
+                            <td>${s.enrollmentNo}</td>
+                            <td>${s.name}</td>
+                            <td style="color:#9ca3af;">${s.email}</td>
+                            <td><span style="background:rgba(16,185,129,.1);color:#6ee7b7;padding:2px 8px;border-radius:6px;font-size:12px;">Sem ${s.semester}</span></td>
+                            <td>
+                                <select id="att_${s.enrollmentId}" class="form-select" style="width:130px;padding:6px 10px;">
+                                    <option value="true">✅ Present</option>
+                                    <option value="false">❌ Absent</option>
+                                </select>
+                            </td>
+                            <td><button class="btn-primary-c" style="padding:7px 14px;font-size:13px;" onclick="markAttendance(${s.enrollmentId})">Save</button></td>
+                        </tr>`;
+                    });
+                    $("#attStudentsTbody").html(html);
+                    $("#attStudentsPanel").show();
+                },
+                error: function () { showAlert("Failed to load students", "error"); }
+            });
+        }
+
+        function markAttendance(enrollmentId) {
+            const date      = $("#attDate").val();
+            const isPresent = $("#att_" + enrollmentId).val() === "true";
+
+            if (!date) { showAlert("Please select a date first", "error"); return; }
+
+            $.ajax({
+                url: baseUrl + "/Staff/attendance",
+                type: "POST",
+                headers: authHeader(),
+                data: JSON.stringify({ enrollmentId, date, isPresent }),
+                success: function (msg) { showAlert(msg, "success"); },
+                error: function (xhr) { showAlert(xhr.responseText || "Failed to mark attendance", "error"); }
+            });
+        }
+
+        // ── Load students for marks ──
+        function loadStudentsForMarks() {
+            const courseId = $("#markCourseId").val();
+            if (!courseId) { $("#marksFormPanel").hide(); return; }
+
+            $.ajax({
+                url: baseUrl + "/Staff/course/" + courseId + "/students",
+                headers: authHeader(),
+                success: function (students) {
+                    if (!students.length) {
+                        showAlert("No students enrolled in this course", "error");
+                        $("#marksFormPanel").hide();
+                        return;
+                    }
+                    const opts = students.map(s => `<option value="${s.enrollmentId}">${s.name} (${s.enrollmentNo})</option>`).join("");
+                    $("#markEnrollmentId").html(opts);
+                    $("#marksFormPanel").show();
+                },
+                error: function () { showAlert("Failed to load students", "error"); }
+            });
+        }
+
+        function submitMarks() {
+            const enrollmentId  = parseInt($("#markEnrollmentId").val());
+            const examType      = $("#markExamType").val();
+            const obtainedMarks = parseFloat($("#markObtained").val());
+            const totalMarks    = parseFloat($("#markTotal").val());
+
+            if (!enrollmentId || !examType || isNaN(obtainedMarks) || isNaN(totalMarks)) {
+                showAlert("Please fill all fields", "error"); return;
+            }
+            if (obtainedMarks > totalMarks) {
+                showAlert("Obtained marks cannot exceed total marks", "error"); return;
+            }
+
+            $.ajax({
+                url: baseUrl + "/Staff/marks",
+                type: "POST",
+                headers: authHeader(),
+                data: JSON.stringify({ enrollmentId, examType, obtainedMarks, totalMarks }),
+                success: function (msg) {
+                    showAlert(msg, "success");
+                    $("#markObtained, #markTotal").val("");
+                },
+                error: function (xhr) { showAlert(xhr.responseText || "Failed to save marks", "error"); }
+            });
+        }
+
+        // ── View Attendance Report ──
+        function loadAttendanceReport() {
+            const courseId = $("#viewAttCourseId").val();
+            if (!courseId) { showAlert("Please select a course", "error"); return; }
+
+            $.ajax({
+                url: baseUrl + "/Staff/attendance/" + courseId,
+                headers: authHeader(),
+                success: function (data) {
+                    if (!data.length) {
+                        $("#viewAttTbody").html('<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📭</div><p>No attendance records found.</p></div></td></tr>');
+                        return;
+                    }
+                    let html = "";
+                    data.forEach((r, i) => {
+                        const d = new Date(r.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+                        html += `<tr>
+                            <td>${i + 1}</td>
+                            <td>${r.name}</td>
+                            <td>${r.enrollmentNo}</td>
+                            <td>${r.course}</td>
+                            <td>${d}</td>
+                            <td><span class="${r.isPresent ? 'badge-present' : 'badge-absent'}">${r.isPresent ? '✅ Present' : '❌ Absent'}</span></td>
+                        </tr>`;
+                    });
+                    $("#viewAttTbody").html(html);
+                },
+                error: function () { showAlert("Failed to load attendance", "error"); }
+            });
+        }
+
+        // ── View Marks Report ──
+        function loadMarksReport() {
+            const courseId = $("#viewMarkCourseId").val();
+            if (!courseId) { showAlert("Please select a course", "error"); return; }
+
+            $.ajax({
+                url: baseUrl + "/Staff/marks/" + courseId,
+                headers: authHeader(),
+                success: function (data) {
+                    if (!data.length) {
+                        $("#viewMarksTbody").html('<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📭</div><p>No marks records found.</p></div></td></tr>');
+                        return;
+                    }
+                    let html = "";
+                    data.forEach((r, i) => {
+                        const pct = r.percentage;
+                        const pctColor = pct >= 75 ? '#6ee7b7' : pct >= 50 ? '#fcd34d' : '#fca5a5';
+                        html += `<tr>
+                            <td>${i + 1}</td>
+                            <td>${r.name}</td>
+                            <td>${r.enrollmentNo}</td>
+                            <td>${r.course}</td>
+                            <td><span style="background:rgba(139,92,246,.15);color:#c4b5fd;border:1px solid rgba(139,92,246,.25);padding:3px 8px;border-radius:6px;font-size:12px;">${r.examType}</span></td>
+                            <td style="font-weight:600;">${r.obtainedMarks}</td>
+                            <td style="color:#6b7280;">${r.totalMarks}</td>
+                            <td><span class="badge-pct" style="color:${pctColor};">${pct}%</span></td>
+                        </tr>`;
+                    });
+                    $("#viewMarksTbody").html(html);
+                },
+                error: function () { showAlert("Failed to load marks", "error"); }
+            });
+        }
+
+        // ── Initial load ──
+        loadCourses("dashboard");
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam) {
+            showSection(tabParam);
+        }
+    </script>
+</body>
+</html>

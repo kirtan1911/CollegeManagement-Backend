@@ -1,0 +1,50 @@
+## Visual Studio / .NET Core
+*.user
+*.suo
+.vs/
+[Bb]in/
+[Oo]bj/
+.build/
+
+## ⚠️ SECURITY: Sensitive config — never commit real secrets
+## Real values go in appsettings.Development.json or dotnet user-secrets
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Staging.json
+# Allow only the base template
+!appsettings.json
+
+## dotnet user-secrets storage
+secrets.json
+
+## EF Core SQLite (if ever used locally)
+*.db
+*.db-shm
+*.db-wal
+
+## Build artifacts
+*.dll
+*.pdb
+*.nupkg
+publish/
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Rider / JetBrains
+.idea/
+*.sln.iml
+
+## Node (if frontend uses npm)
+node_modules/
+dist/
+
+## ⚠️ SECURITY: Uploaded user files — never in source control
+## Students upload PDFs/docs; only the directory structure is committed
+CollegeManagement/wwwroot/materials/
+wwwroot/materials/
+
+## Keep the placeholder directory (so the folder exists after clone)
+!CollegeManagement/wwwroot/materials/.gitkeep

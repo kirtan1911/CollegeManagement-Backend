@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="College Management System — Courses Administration">
+<title>Courses — College Management System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="glass-theme.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<style>
+  body { display: flex; }
+  .filter-glass { padding: 20px 24px; margin-bottom: 20px; }
+  .search-wrap { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+  .search-wrap > * { flex:1; min-width:180px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="glass-sidebar">
+  <div class="sb-brand">🎓</div>
+  <nav class="sb-nav">
+    <a class="sb-item" href="admin.html"         data-tip="Dashboard">📊</a>
+    <a class="sb-item" href="users.html"          data-tip="Users">👥</a>
+    <div class="sb-sep"></div>
+    <a class="sb-item" href="departments.html"    data-tip="Departments">🏛️</a>
+    <a class="sb-item active" href="courses.html" data-tip="Courses">📚</a>
+    <a class="sb-item" href="students.html"       data-tip="Students">🎓</a>
+    <a class="sb-item" href="Exam.html"           data-tip="Exams">📝</a>
+    <a class="sb-item" href="StudyMaterial.html"  data-tip="Study Material">📖</a>
+    <a class="sb-item" href="Fees.html"           data-tip="Fees">💰</a>
+    <a class="sb-item" href="results.html"        data-tip="Results">🏆</a>
+    <a class="sb-item" href="hostel.html"         data-tip="Hostel">🏠</a>
+    <a class="sb-item" href="recheck.html"        data-tip="Re-check">🔁</a>
+    <a class="sb-item" href="placement.html"      data-tip="Placement">💼</a>
+    <a class="sb-item" href="timetable.html"      data-tip="Timetable">🗓️</a>
+    <a class="sb-item" href="report.html"         data-tip="Reports">📈</a>
+  </nav>
+  <div class="sb-bottom">
+    <div class="sb-avatar" id="sbAvatar" title="">A</div>
+    <button class="sb-logout" onclick="logout()" title="Logout">🚪</button>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="glass-main">
+  <div class="glass-topbar">
+    <div>
+      <div class="page-heading">Courses</div>
+      <div class="page-sub">Manage academic courses across departments and semesters</div>
+    </div>
+    <button class="glass-btn-primary" onclick="openAdd()" id="btnAddCourse">➕ Add Course</button>
+  </div>
+
+  <!-- Filter row -->
+  <div class="glass-card filter-glass" style="margin-bottom:20px;">
+    <div class="search-wrap">
+      <div>
+        <label class="glass-label">Search</label>
+        <input type="text" id="searchBox" class="glass-input" placeholder="🔍 Name or code...">
+      </div>
+      <div>
+        <label class="glass-label">Department</label>
+        <div class="glass-select-wrap">
+          <select id="deptFilter" class="glass-select">
+            <option value="">All Departments</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Semester chip filter -->
+    <div style="margin-top:16px;">
+      <label class="glass-label" style="margin-bottom:10px;">Semester</label>
+      <div class="glass-chip-row" id="semChipRow">
+        <button class="glass-chip active" data-sem="">All</button>
+        <button class="glass-chip" data-sem="1">Sem 1</button>
+        <button class="glass-chip" data-sem="2">Sem 2</button>
+        <button class="glass-chip" data-sem="3">Sem 3</button>
+        <button class="glass-chip" data-sem="4">Sem 4</button>
+        <button class="glass-chip" data-sem="5">Sem 5</button>
+        <button class="glass-chip" data-sem="6">Sem 6</button>
+        <button class="glass-chip" data-sem="7">Sem 7</button>
+        <button class="glass-chip" data-sem="8">Sem 8</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="glass-card card-p-md">
+    <div class="section-title">
+      All Courses
+      <span class="badge-count" id="countBadge">0 records</span>
+    </div>
+    <div class="glass-table-wrap">
+      <table class="glass-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Course Name</th>
+            <th>Code</th>
+            <th>Credits</th>
+            <th>Semester</th>
+            <th>Department</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="courseTable"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- ═══ ADD MODAL ═══ -->
+<div class="modal fade" id="addModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Course</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="glass-label">Course Name</label>
+          <input type="text" id="addName" class="glass-input" placeholder="e.g. Data Structures">
+        </div>
+        <div class="form-group">
+          <label class="glass-label">Course Code</label>
+          <input type="text" id="addCode" class="glass-input" placeholder="e.g. CS301">
+        </div>
+        <div style="display:flex;gap:12px;">
+          <div class="form-group" style="flex:1">
+            <label class="glass-label">Credits</label>
+            <input type="number" id="addCredits" class="glass-input" placeholder="4" min="1" max="10">
+          </div>
+          <div class="form-group" style="flex:1">
+            <label class="glass-label">Semester</label>
+            <div class="glass-select-wrap">
+              <select id="addSemester" class="glass-select">
+                <option value="1">Semester 1</option>
+                <option value="2">Semester 2</option>
+                <option value="3">Semester 3</option>
+                <option value="4">Semester 4</option>
+                <option value="5">Semester 5</option>
+                <option value="6">Semester 6</option>
+                <option value="7">Semester 7</option>
+                <option value="8">Semester 8</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="glass-label">Department</label>
+          <div class="glass-select-wrap">
+            <select id="deptSelect" class="glass-select"></select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="glass-btn-secondary glass-btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button class="glass-btn-primary glass-btn-sm" onclick="addCourse()">Add Course</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EDIT MODAL ═══ -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Course</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editId">
+        <div class="form-group">
+          <label class="glass-label">Course Name</label>
+          <input type="text" id="editName" class="glass-input">
+        </div>
+        <div class="form-group">
+          <label class="glass-label">Course Code</label>
+          <input type="text" id="editCode" class="glass-input">
+        </div>
+        <div style="display:flex;gap:12px;">
+          <div class="form-group" style="flex:1">
+            <label class="glass-label">Credits</label>
+            <input type="number" id="editCredits" class="glass-input" min="1" max="10">
+          </div>
+          <div class="form-group" style="flex:1">
+            <label class="glass-label">Semester</label>
+            <div class="glass-select-wrap">
+              <select id="editSemester" class="glass-select">
+                <option value="1">Semester 1</option>
+                <option value="2">Semester 2</option>
+                <option value="3">Semester 3</option>
+                <option value="4">Semester 4</option>
+                <option value="5">Semester 5</option>
+                <option value="6">Semester 6</option>
+                <option value="7">Semester 7</option>
+                <option value="8">Semester 8</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="glass-label">Department</label>
+          <div class="glass-select-wrap">
+            <select id="editDept" class="glass-select"></select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="glass-btn-secondary glass-btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button class="glass-btn-primary glass-btn-sm" onclick="updateCourse()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="glass-theme.js"></script>
+<script>
+requireAuth(['Admin']);
+
+const BASE = API_BASE + '/Admin';
+let allCourses = [];
+let departments = [];
+let activeSem = '';
+
+function loadDepartments(cb) {
+  $.ajax({
+    url: BASE + '/departments', type: 'GET',
+    headers: authHeader(),
+    success: function(data) {
+      departments = data;
+      const opts = data.map(d => `<option value="${d.departmentId}">${d.departmentName}</option>`).join('');
+      const filterOpts = `<option value="">All Departments</option>` + data.map(d => `<option value="${d.departmentId}">${d.departmentName}</option>`).join('');
+      $('#deptSelect, #editDept').html(opts);
+      $('#deptFilter').html(filterOpts);
+      if (cb) cb();
+    }
+  });
+}
+
+function loadCourses() {
+  $.ajax({
+    url: BASE + '/courses', type: 'GET',
+    headers: authHeader(),
+    success: function(data) { allCourses = data; renderTable(); },
+    error: function() { toast('Failed to load courses', 'error'); }
+  });
+}
+
+function renderTable() {
+  const s  = $('#searchBox').val().toLowerCase();
+  const df = $('#deptFilter').val();
+  const sf = activeSem;
+
+  const filtered = allCourses.filter(c =>
+    (!s  || c.courseName.toLowerCase().includes(s) || c.courseCode.toLowerCase().includes(s)) &&
+    (!df || c.departmentId == df) &&
+    (!sf || c.semester == sf)
+  );
+
+  $('#countBadge').text(filtered.length + ' records');
+
+  if (!filtered.length) {
+    $('#courseTable').html(emptyTableRow(7, '📭', 'No courses match your filters'));
+    return;
+  }
+
+  let rows = '';
+  filtered.forEach((c, i) => {
+    rows += `<tr>
+      <td class="td-muted">${c.courseId}</td>
+      <td class="td-bold">${c.courseName}</td>
+      <td><span class="td-code">${c.courseCode}</span></td>
+      <td><span class="glass-badge badge-info">${c.credits} cr</span></td>
+      <td><span class="glass-badge badge-orange">Sem ${c.semester || '—'}</span></td>
+      <td><span class="glass-badge badge-muted">${c.department}</span></td>
+      <td>
+        <button class="glass-btn-secondary glass-btn-sm" style="margin-right:6px"
+          onclick="openEdit(${c.courseId},'${c.courseName.replace(/'/g,"\\'")}','${c.courseCode}',${c.credits},${c.departmentId},${c.semester||1})">✏️ Edit</button>
+        <button class="glass-btn-danger"
+          onclick="deleteCourse(${c.courseId},'${c.courseName.replace(/'/g,"\\'")}')">🗑️</button>
+      </td>
+    </tr>`;
+  });
+  $('#courseTable').html(rows);
+}
+
+function openAdd() {
+  $('#addName,#addCode,#addCredits').val('');
+  $('#addSemester').val('1');
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('addModal')).show();
+}
+
+function addCourse() {
+  const data = {
+    courseName:   $('#addName').val().trim(),
+    courseCode:   $('#addCode').val().trim(),
+    credits:      parseInt($('#addCredits').val()),
+    semester:     parseInt($('#addSemester').val()),
+    departmentId: parseInt($('#deptSelect').val())
+  };
+  if (!data.courseName || !data.courseCode) { toast('Fill all required fields', 'error'); return; }
+  $.ajax({
+    url: BASE + '/courses', type: 'POST',
+    contentType: 'application/json', headers: authHeader(),
+    data: JSON.stringify(data),
+    success: function() {
+      bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+      toast('Course added successfully!');
+      loadCourses();
+    },
+    error: function(xhr) { toast(xhr.responseJSON?.message || xhr.responseText || 'Failed', 'error'); }
+  });
+}
+
+function openEdit(id, name, code, credits, deptId, semester) {
+  $('#editId').val(id);
+  $('#editName').val(name);
+  $('#editCode').val(code);
+  $('#editCredits').val(credits);
+  $('#editSemester').val(semester);
+  $('#editDept').val(deptId);
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('editModal')).show();
+}
+
+function updateCourse() {
+  const id   = $('#editId').val();
+  const data = {
+    courseName:   $('#editName').val().trim(),
+    courseCode:   $('#editCode').val().trim(),
+    credits:      parseInt($('#editCredits').val()),
+    semester:     parseInt($('#editSemester').val()),
+    departmentId: parseInt($('#editDept').val())
+  };
+  $.ajax({
+    url: BASE + '/courses/' + id, type: 'PUT',
+    contentType: 'application/json', headers: authHeader(),
+    data: JSON.stringify(data),
+    success: function() {
+      bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+      toast('Course updated!');
+      loadCourses();
+    },
+    error: function(xhr) { toast(xhr.responseJSON?.message || xhr.responseText || 'Failed', 'error'); }
+  });
+}
+
+function deleteCourse(id, name) {
+  glassConfirm('Delete Course', `Delete "<strong>${name}</strong>"? This action cannot be undone.`, () => {
+    $.ajax({
+      url: BASE + '/courses/' + id, type: 'DELETE',
+      headers: authHeader(),
+      success: function() { toast('Course deleted'); loadCourses(); },
+      error: function(xhr) { toast(xhr.responseJSON?.message || 'Failed', 'error'); }
+    });
+  }, { danger: true, btnLabel: 'Delete' });
+}
+
+// Semester chip filter
+$('#semChipRow').on('click', '.glass-chip', function() {
+  $('#semChipRow .glass-chip').removeClass('active');
+  $(this).addClass('active');
+  activeSem = $(this).data('sem').toString();
+  renderTable();
+});
+
+$('#searchBox').on('keyup', renderTable);
+$('#deptFilter').on('change', renderTable);
+
+loadDepartments(loadCourses);
+</script>
+</body>
+</html>

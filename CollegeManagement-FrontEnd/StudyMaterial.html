@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="College Management System — Study Material Management">
+<title>Study Material — College Management System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="glass-theme.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<style>
+  body { display: flex; }
+  .material-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .material-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+  .material-icon {
+    width: 46px; height: 46px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .mi-pdf       { background: rgba(239,68,68,0.14);  border: 1px solid rgba(239,68,68,0.25); }
+  .mi-ppt       { background: rgba(255,154,60,0.14); border: 1px solid rgba(255,154,60,0.25); }
+  .mi-link      { background: rgba(61,220,151,0.14); border: 1px solid rgba(61,220,151,0.25); }
+  .mi-image     { background: rgba(99,165,252,0.14); border: 1px solid rgba(99,165,252,0.25); }
+  .mi-practical { background: rgba(139,92,246,0.14); border: 1px solid rgba(139,92,246,0.25); }
+  .mi-default   { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); }
+  .mat-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .mat-desc  { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .mat-meta  { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .mat-actions { margin-left: auto; display: flex; gap: 8px; flex-shrink: 0; flex-direction: column; }
+  .materials-grid { display: flex; flex-direction: column; gap: 12px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="glass-sidebar">
+  <div class="sb-brand">🎓</div>
+  <nav class="sb-nav" id="sbNavItems"></nav>
+  <div class="sb-bottom">
+    <div class="sb-avatar" id="sbAvatar">A</div>
+    <button class="sb-logout" onclick="logout()" title="Logout">🚪</button>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="glass-main">
+  <div class="glass-topbar">
+    <div>
+      <div class="page-heading">Study Material 📚</div>
+      <div class="page-sub">Upload and manage course materials for students</div>
+    </div>
+    <button class="glass-btn-primary" id="btnUpload" onclick="openUploadModal()" style="display:none">➕ Upload Material</button>
+  </div>
+
+  <!-- 3-Level cascade filter -->
+  <div class="glass-card card-p-md" style="margin-bottom:20px;">
+    <div class="section-title" style="margin-bottom:16px;">🔍 Filter Materials</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+      <div style="flex:1;min-width:160px;">
+        <label class="glass-label">Department</label>
+        <div class="glass-select-wrap">
+          <select id="deptSel" class="glass-select" onchange="onDeptChange()">
+            <option value="">— All Departments —</option>
+          </select>
+        </div>
+      </div>
+      <div style="flex:1;min-width:140px;">
+        <label class="glass-label">Semester</label>
+        <div class="glass-select-wrap">
+          <select id="semSel" class="glass-select" onchange="onSemChange()">
+            <option value="">— All Semesters —</option>
+          </select>
+        </div>
+      </div>
+      <div style="flex:1;min-width:180px;">
+        <label class="glass-label">Subject / Course</label>
+        <div class="glass-select-wrap">
+          <select id="courseSelect" class="glass-select" onchange="loadMaterials()">
+            <option value="">— Select Course —</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category chip filter -->
+    <div>
+      <label class="glass-label" style="margin-bottom:10px;">Category</label>
+      <div class="glass-chip-row" id="catChipRow">
+        <button class="glass-chip active" data-cat="">All</button>
+        <button class="glass-chip" data-cat="LectureNote">📝 Lecture Note</button>
+        <button class="glass-chip" data-cat="PPT">🖥️ PPT</button>
+        <button class="glass-chip" data-cat="Practical">🔬 Practical</button>
+        <button class="glass-chip" data-cat="GoogleClassroomLink">🔗 Classroom Link</button>
+        <button class="glass-chip" data-cat="Image">🖼️ Image</button>
+        <button class="glass-chip" data-cat="Other">📦 Other</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Materials list -->
+  <div class="glass-card card-p-md">
+    <div class="section-title">
+      📁 Materials
+      <span class="badge-count" id="matCount">—</span>
+    </div>
+    <div id="materialsArea">
+      <div class="glass-empty">
+        <div class="empty-icon">📚</div>
+        <div class="empty-title">Select a course to view materials</div>
+        <div class="empty-sub">Use the filters above to find the right course</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══ UPLOAD MODAL ═══ -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Upload Study Material</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:0">
+          <div class="form-group" style="flex:1;min-width:180px;">
+            <label class="glass-label">Course</label>
+            <div class="glass-select-wrap">
+              <select id="uploadCourseId" class="glass-select"></select>
+            </div>
+          </div>
+          <div class="form-group" style="flex:1;min-width:180px;">
+            <label class="glass-label">Category</label>
+            <div class="glass-select-wrap">
+              <select id="uploadCategory" class="glass-select" onchange="onCategoryChange()">
+                <option value="LectureNote">📝 Lecture Note</option>
+                <option value="PPT">🖥️ PPT</option>
+                <option value="Practical">🔬 Practical</option>
+                <option value="GoogleClassroomLink">🔗 Google Classroom Link</option>
+                <option value="Image">🖼️ Image</option>
+                <option value="Other">📦 Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="glass-label">Title</label>
+          <input type="text" id="uploadTitle" class="glass-input" placeholder="e.g. Unit 3 — Data Structures Notes">
+        </div>
+        <div class="form-group">
+          <label class="glass-label">Description <span style="color:var(--text-subtle)">(optional)</span></label>
+          <input type="text" id="uploadDescription" class="glass-input" placeholder="Brief description">
+        </div>
+
+        <!-- Conditional: Practical Number -->
+        <div class="form-group" id="practicalNumberGroup" style="display:none;">
+          <label class="glass-label">Practical Number</label>
+          <input type="number" id="practicalNumber" class="glass-input" placeholder="e.g. 3" min="1">
+        </div>
+
+        <!-- Conditional: External Link (Google Classroom) -->
+        <div class="form-group" id="externalLinkGroup" style="display:none;">
+          <label class="glass-label">External Link</label>
+          <input type="url" id="externalLink" class="glass-input" placeholder="https://classroom.google.com/...">
+        </div>
+
+        <!-- Conditional: File upload (all except Google Classroom) -->
+        <div class="form-group" id="fileGroup">
+          <label class="glass-label">File</label>
+          <input type="file" id="uploadFile" class="glass-input" style="padding:8px 16px;cursor:pointer;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="glass-btn-secondary glass-btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button class="glass-btn-primary glass-btn-sm" onclick="submitUpload()">📤 Upload</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="glass-theme.js"></script>
+<script>
+requireAuth(['Admin', 'Staff', 'Faculty', 'Student']);
+
+const role = getRole();
+const user = getUser();
+let allCourses = [];
+let activeCat  = '';
+let currentCourseId = '';
+
+// ── Build sidebar per role ──
+function buildSidebar() {
+  const isAdmin    = role === 'Admin';
+  const isFacOrStaff = role === 'Faculty' || role === 'Staff';
+  const isStudent  = role === 'Student';
+
+  let nav = '';
+  if (isAdmin) {
+    nav = `
+      <a class="sb-item" href="admin.html"         data-tip="Dashboard">📊</a>
+      <a class="sb-item" href="users.html"          data-tip="Users">👥</a>
+      <div class="sb-sep"></div>
+      <a class="sb-item" href="departments.html"    data-tip="Departments">🏛️</a>
+      <a class="sb-item" href="courses.html"        data-tip="Courses">📚</a>
+      <a class="sb-item" href="students.html"       data-tip="Students">🎓</a>
+      <a class="sb-item" href="Exam.html"           data-tip="Exams">📝</a>
+      <a class="sb-item active" href="StudyMaterial.html" data-tip="Study Material">📖</a>
+      <a class="sb-item" href="Fees.html"           data-tip="Fees">💰</a>
+      <a class="sb-item" href="results.html"        data-tip="Results">🏆</a>
+      <a class="sb-item" href="hostel.html"         data-tip="Hostel">🏠</a>
+      <a class="sb-item" href="recheck.html"        data-tip="Re-check">🔁</a>
+      <a class="sb-item" href="placement.html"      data-tip="Placement">💼</a>
+      <a class="sb-item" href="timetable.html"      data-tip="Timetable">🗓️</a>`;
+  } else if (isFacOrStaff) {
+    nav = `
+      <a class="sb-item" href="Faculty.html"        data-tip="Dashboard">🏠</a>
+      <a class="sb-item" href="Exam.html"           data-tip="Exams">📝</a>
+      <a class="sb-item active" href="StudyMaterial.html" data-tip="Study Material">📖</a>
+      <a class="sb-item" href="timetable.html"      data-tip="Timetable">🗓️</a>
+      <a class="sb-item" href="recheck.html"        data-tip="Re-check">🔁</a>`;
+  } else {
+    nav = `
+      <a class="sb-item" href="student.html"        data-tip="Dashboard">🏠</a>
+      <a class="sb-item active" href="StudyMaterial.html" data-tip="Study Material">📖</a>
+      <a class="sb-item" href="results.html"        data-tip="Results">🏆</a>
+      <a class="sb-item" href="Exam-Portal.html"    data-tip="Exam Portal">🧪</a>`;
+  }
+  $('#sbNavItems').html(nav);
+
+  // Show upload button only for staff/admin/faculty
+  if (!isStudent) $('#btnUpload').show();
+}
+
+// ── Load courses (all, then populate dept/sem cascade) ──
+function loadCourses() {
+  const endpoint = (role === 'Admin') ? '/Admin/courses' :
+                   (role === 'Student') ? '/Student/courses' : '/Staff/courses';
+
+  $.ajax({
+    url: API_BASE + endpoint, headers: authHeader(),
+    success: function(data) {
+      allCourses = data;
+      buildDeptOptions();
+      populateUploadCourseSelect(data);
+    },
+    error: function() { toast('Failed to load courses', 'error'); }
+  });
+}
+
+function buildDeptOptions() {
+  const depts = [...new Set(allCourses.map(c => c.department || c.departmentName || ''))].filter(Boolean).sort();
+  const opts = `<option value="">— All Departments —</option>` + depts.map(d => `<option value="${d}">${d}</option>`).join('');
+  $('#deptSel').html(opts);
+  onDeptChange();
+}
+
+function onDeptChange() {
+  const dept = $('#deptSel').val();
+  const filtered = dept ? allCourses.filter(c => (c.department || c.departmentName || '') === dept) : allCourses;
+  const sems  = [...new Set(filtered.map(c => c.semester).filter(s => s))].sort((a,b) => a-b);
+  const semOpts = `<option value="">— All Semesters —</option>` + sems.map(s => `<option value="${s}">Semester ${s}</option>`).join('');
+  $('#semSel').html(semOpts);
+  onSemChange();
+}
+
+function onSemChange() {
+  const dept = $('#deptSel').val();
+  const sem  = $('#semSel').val();
+  let filtered = allCourses;
+  if (dept) filtered = filtered.filter(c => (c.department || c.departmentName || '') === dept);
+  if (sem)  filtered = filtered.filter(c => c.semester == sem);
+
+  const cOpts = `<option value="">— Select Course —</option>` +
+    filtered.map(c => `<option value="${c.courseId}">${c.courseCode} — ${c.courseName}</option>`).join('');
+  $('#courseSelect').html(cOpts);
+  currentCourseId = '';
+  renderEmpty('select-course');
+}
+
+function populateUploadCourseSelect(data) {
+  const opts = data.map(c => `<option value="${c.courseId}">${c.courseCode} — ${c.courseName}</option>`).join('');
+  $('#uploadCourseId').html(opts);
+}
+
+// ── Load materials ──
+function loadMaterials() {
+  currentCourseId = $('#courseSelect').val();
+  if (!currentCourseId) { renderEmpty('select-course'); return; }
+
+  $('#materialsArea').html('<div class="glass-spinner"><div class="spinner-ring"></div><span>Loading materials...</span></div>');
+
+  const catParam = activeCat ? `?category=${activeCat}` : '';
+  $.ajax({
+    url: API_BASE + `/StudyMaterial/course/${currentCourseId}${catParam}`,
+    headers: authHeader(),
+    success: function(data) { renderMaterials(data); },
+    error: function() { toast('Failed to load materials', 'error'); renderEmpty('error'); }
+  });
+}
+
+function renderMaterials(list) {
+  $('#matCount').text(list.length + ' items');
+  if (!list.length) {
+    renderEmpty('empty');
+    return;
+  }
+
+  const iconMap = {
+    LectureNote: { emoji: '📝', cls: 'mi-default' },
+    PPT:         { emoji: '🖥️', cls: 'mi-ppt' },
+    Practical:   { emoji: '🔬', cls: 'mi-practical' },
+    GoogleClassroomLink: { emoji: '🔗', cls: 'mi-link' },
+    Image:       { emoji: '🖼️', cls: 'mi-image' },
+    PDF:         { emoji: '📄', cls: 'mi-pdf' },
+    Other:       { emoji: '📦', cls: 'mi-default' }
+  };
+
+  let html = '<div class="materials-grid">';
+  list.forEach(m => {
+    const ic = iconMap[m.category] || iconMap.Other;
+    const dt = fmtDateTime(m.uploadedAt);
+    const isLink = m.category === 'GoogleClassroomLink';
+    const actionBtn = isLink
+      ? `<a href="${m.externalLink}" target="_blank" rel="noopener" class="glass-btn-primary glass-btn-sm" style="text-decoration:none">🔗 Open</a>`
+      : `<a href="${FILE_BASE}${m.fileUrl}" target="_blank" rel="noopener" class="glass-btn-primary glass-btn-sm" style="text-decoration:none">⬇️ Download</a>`;
+
+    const delBtn = (role !== 'Student')
+      ? `<button class="glass-btn-danger" style="font-size:11px;padding:5px 10px;" onclick="deleteMaterial(${m.materialId},'${(m.title||'').replace(/'/g,"\\'")}')">🗑️ Delete</button>`
+      : '';
+
+    const practTag = m.practicalNumber ? `<span class="glass-badge badge-info">Practical #${m.practicalNumber}</span>` : '';
+
+    html += `
+    <div class="material-card">
+      <div class="material-icon ${ic.cls}">${ic.emoji}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="mat-title">${m.title}</div>
+        <div class="mat-desc">${m.description || '—'}</div>
+        <div class="mat-meta">
+          <span class="glass-badge badge-muted">${m.category || 'File'}</span>
+          ${practTag}
+          <span class="td-muted" style="font-size:11px">🕒 ${dt}</span>
+        </div>
+      </div>
+      <div class="mat-actions">
+        ${actionBtn}
+        ${delBtn}
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  $('#materialsArea').html(html);
+}
+
+function renderEmpty(type) {
+  const msgs = {
+    'select-course': { icon: '📚', title: 'Select a course', sub: 'Use the filters above' },
+    'empty':         { icon: '📭', title: 'No materials yet', sub: 'Upload the first material for this course' },
+    'error':         { icon: '⚠️', title: 'Failed to load', sub: 'Please try again' }
+  };
+  const m = msgs[type] || msgs['select-course'];
+  $('#materialsArea').html(emptyStateHtml(m.icon, m.title, m.sub));
+  $('#matCount').text('—');
+}
+
+// ── Category chip filter ──
+$('#catChipRow').on('click', '.glass-chip', function() {
+  $('#catChipRow .glass-chip').removeClass('active');
+  $(this).addClass('active');
+  activeCat = $(this).data('cat');
+  if (currentCourseId) loadMaterials();
+});
+
+// ── Upload modal: conditional inputs ──
+function onCategoryChange() {
+  const cat = $('#uploadCategory').val();
+  $('#practicalNumberGroup').toggle(cat === 'Practical');
+  $('#externalLinkGroup').toggle(cat === 'GoogleClassroomLink');
+  $('#fileGroup').toggle(cat !== 'GoogleClassroomLink');
+}
+
+function openUploadModal() {
+  const cid = $('#courseSelect').val();
+  $('#uploadTitle,#uploadDescription').val('');
+  $('#uploadFile').val('');
+  $('#practicalNumber').val('');
+  $('#externalLink').val('');
+  $('#uploadCategory').val('LectureNote');
+  if (cid) $('#uploadCourseId').val(cid);
+  onCategoryChange();
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('uploadModal')).show();
+}
+
+function submitUpload() {
+  const courseId  = $('#uploadCourseId').val();
+  const title     = $('#uploadTitle').val().trim();
+  const category  = $('#uploadCategory').val();
+
+  if (!courseId) { toast('Please select a course', 'error'); return; }
+  if (!title)    { toast('Title is required', 'error'); return; }
+
+  const formData = new FormData();
+  formData.append('CourseId',    courseId);
+  formData.append('Title',       title);
+  formData.append('Description', $('#uploadDescription').val().trim());
+  formData.append('Category',    category);
+
+  if (category === 'Practical') {
+    const pn = parseInt($('#practicalNumber').val());
+    if (!pn || pn < 1) { toast('Enter a valid Practical Number', 'error'); return; }
+    formData.append('PracticalNumber', pn);
+  }
+
+  if (category === 'GoogleClassroomLink') {
+    const link = $('#externalLink').val().trim();
+    if (!link) { toast('External link is required for Classroom Link', 'error'); return; }
+    formData.append('ExternalLink', link);
+  } else {
+    const file = $('#uploadFile')[0].files[0];
+    if (!file) { toast('Please select a file to upload', 'error'); return; }
+    formData.append('File', file);
+  }
+
+  $.ajax({
+    url: API_BASE + '/StudyMaterial/upload', type: 'POST',
+    headers: authHeaderNoContentType(),
+    data: formData, processData: false, contentType: false,
+    success: function() {
+      bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
+      toast('Material uploaded successfully!');
+      loadMaterials();
+    },
+    error: function(xhr) {
+      toast(xhr.responseJSON?.message || 'Upload failed', 'error');
+    }
+  });
+}
+
+function deleteMaterial(id, title) {
+  glassConfirm('Delete Material', `Delete "<strong>${title}</strong>"?`, () => {
+    $.ajax({
+      url: API_BASE + '/StudyMaterial/' + id, type: 'DELETE',
+      headers: authHeader(),
+      success: function() { toast('Material deleted'); loadMaterials(); },
+      error: function(xhr) { toast(xhr.responseJSON?.message || 'Delete failed', 'error'); }
+    });
+  }, { danger: true, btnLabel: 'Delete' });
+}
+
+buildSidebar();
+loadCourses();
+</script>
+</body>
+</html>

@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Management System — Student Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="glass-theme.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            background: #0d1117;
+            color: #e5e7eb;
+            display: flex;
+        }
+
+        /* ── BG grid ── */
+        .bg-grid {
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0; pointer-events: none;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 240px; min-height: 100vh;
+            background: rgba(255,255,255,.03);
+            border-right: 1px solid rgba(255,255,255,.07);
+            display: flex; flex-direction: column;
+            padding: 24px 16px;
+            position: fixed; top: 0; left: 0; bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 32px; padding: 0 8px;
+        }
+
+        .brand-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #6366f1, #10b981);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; flex-shrink: 0;
+        }
+
+        .brand-text { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.2; }
+        .brand-sub  { font-size: 11px; color: #6b7280; }
+
+        .nav-label {
+            font-size: 10px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .08em;
+            color: #4b5563; padding: 0 10px; margin: 16px 0 6px;
+        }
+
+        .nav-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-radius: 10px;
+            cursor: pointer; color: #9ca3af;
+            font-size: 14px; font-weight: 500;
+            transition: .2s; margin-bottom: 2px;
+            border: none; background: none; width: 100%; text-align: left;
+            font-family: 'Outfit', sans-serif;
+            text-decoration: none;
+        }
+
+        .nav-item:hover { background: rgba(255,255,255,.05); color: #e5e7eb; }
+
+        .nav-item.active {
+            background: rgba(99,102,241,.15);
+            color: #a5b4fc;
+            border: 1px solid rgba(99,102,241,.2);
+        }
+
+        .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+        .nav-badge {
+            margin-left: auto;
+            background: #ef4444;
+            color: #fff;
+            font-size: 10.5px;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 1px 7px;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            margin-top: auto; padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,.07);
+        }
+
+        .user-info {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 10px; border-radius: 10px;
+            background: rgba(255,255,255,.04);
+        }
+
+        .user-avatar {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 50%; display: flex;
+            align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
+        }
+
+        .user-name { font-size: 13px; font-weight: 600; color: #e5e7eb; }
+        .user-role { font-size: 11px; color: #6b7280; }
+
+        .btn-logout {
+            width: 100%; margin-top: 8px; padding: 9px;
+            background: rgba(239,68,68,.1);
+            border: 1px solid rgba(239,68,68,.2);
+            border-radius: 10px; color: #fca5a5;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: .2s;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .btn-logout:hover { background: rgba(239,68,68,.2); }
+
+        /* ── Main ── */
+        .main { margin-left: 240px; flex: 1; padding: 32px; min-height: 100vh; position: relative; z-index: 1; }
+
+        .topbar {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            margin-bottom: 28px;
+        }
+
+        .page-title { font-size: 22px; font-weight: 700; color: #fff; }
+        .page-sub   { font-size: 13px; color: #6b7280; margin-top: 3px; }
+
+        /* ── Stats grid ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 16px; margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 14px; padding: 20px;
+        }
+
+        .stat-icon  { font-size: 22px; margin-bottom: 10px; }
+        .stat-label { font-size: 12px; color: #6b7280; margin-bottom: 6px; }
+        .stat-val   { font-size: 24px; font-weight: 700; color: #fff; }
+        .stat-sub   { font-size: 12px; color: #6b7280; margin-top: 3px; }
+
+        /* ── Profile card ── */
+        .profile-card {
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 16px; padding: 28px;
+            display: flex; align-items: center; gap: 24px;
+            margin-bottom: 24px; flex-wrap: wrap;
+        }
+
+        .profile-avatar {
+            width: 72px; height: 72px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 50%; display: flex;
+            align-items: center; justify-content: center;
+            font-size: 28px; font-weight: 700; color: #fff;
+            flex-shrink: 0;
+        }
+
+        .profile-info .p-name  { font-size: 20px; font-weight: 700; color: #fff; }
+        .profile-info .p-email { font-size: 13px; color: #6b7280; margin-top: 3px; }
+        .profile-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+        .tag {
+            padding: 4px 12px; border-radius: 20px;
+            font-size: 12px; font-weight: 600;
+        }
+
+        .tag-indigo { background: rgba(99,102,241,.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,.25); }
+        .tag-green  { background: rgba(16,185,129,.15);  color: #6ee7b7; border: 1px solid rgba(16,185,129,.25); }
+        .tag-purple { background: rgba(139,92,246,.15);  color: #c4b5fd; border: 1px solid rgba(139,92,246,.25); }
+        .tag-yellow { background: rgba(234,179,8,.12);   color: #fde68a; border: 1px solid rgba(234,179,8,.2); }
+
+        /* ── Panel ── */
+        .panel {
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 16px; padding: 24px; margin-bottom: 24px;
+        }
+
+        .panel-title {
+            font-size: 15px; font-weight: 600; color: #e5e7eb;
+            margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+        }
+
+        /* ── Table ── */
+        .table-wrap { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+        thead th {
+            background: rgba(255,255,255,.05);
+            color: #9ca3af; font-weight: 600;
+            padding: 10px 14px; text-align: left; white-space: nowrap;
+        }
+
+        thead th:first-child { border-radius: 8px 0 0 8px; }
+        thead th:last-child  { border-radius: 0 8px 8px 0; }
+
+        tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); transition: .15s; }
+        tbody tr:hover { background: rgba(255,255,255,.03); }
+        tbody td { padding: 11px 14px; color: #d1d5db; vertical-align: middle; }
+
+        /* ── Progress bar ── */
+        .pct-bar-wrap { display: flex; align-items: center; gap: 10px; min-width: 130px; }
+        .pct-bar-bg {
+            flex: 1; height: 6px; background: rgba(255,255,255,.07);
+            border-radius: 99px; overflow: hidden;
+        }
+        .pct-bar-fill { height: 100%; border-radius: 99px; transition: width .4s; }
+
+        /* ── Summary grid ── */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 14px; margin-bottom: 24px;
+        }
+
+        .summary-card {
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 14px; padding: 18px;
+        }
+
+        .sc-course { font-size: 13px; font-weight: 600; color: #e5e7eb; margin-bottom: 12px; }
+        .sc-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .sc-key { font-size: 12px; color: #6b7280; }
+        .sc-val { font-size: 12px; font-weight: 600; color: #e5e7eb; }
+        .sc-pct { font-size: 20px; font-weight: 700; margin-top: 10px; }
+
+        /* ── Badges ── */
+        .badge-present {
+            background: rgba(16,185,129,.15); color: #6ee7b7;
+            border: 1px solid rgba(16,185,129,.25);
+            padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+        .badge-absent {
+            background: rgba(239,68,68,.12); color: #fca5a5;
+            border: 1px solid rgba(239,68,68,.25);
+            padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+        .badge-paid { background: rgba(16,185,129,.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,.25); padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-unpaid { background: rgba(239,68,68,.12); color: #fca5a5; border: 1px solid rgba(239,68,68,.25); padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .btn-pay { background: linear-gradient(135deg,#10b981,#059669); border: none; color: #fff; border-radius: 8px; padding: 5px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Outfit',sans-serif; transition:.2s; }
+        .btn-pay:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,.4); }
+        .btn-receipt-s { background: rgba(99,102,241,.15); border: 1px solid rgba(99,102,241,.3); color: #a5b4fc; border-radius: 8px; padding: 5px 14px; font-size: 12px; cursor: pointer; font-family: 'Outfit',sans-serif; }
+        .btn-receipt-s:hover { background: rgba(99,102,241,.3); }
+        .rcp-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.04); font-size:14px; }
+        .rcp-row:last-child { border-bottom:none; }
+        .rcp-row span:first-child { color:#9ca3af; }
+        .rcp-row span:last-child { color:#fff; font-weight:600; }
+
+        /* ── Alert ── */
+        .alert-box {
+            padding: 10px 14px; border-radius: 10px; font-size: 13px;
+            margin-bottom: 16px; display: none;
+        }
+        .alert-error   { background: rgba(239,68,68,.1);  border: 1px solid rgba(239,68,68,.3);  color: #fca5a5; }
+        .alert-success { background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.3); color: #6ee7b7; }
+
+        /* ── Section ── */
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* ── Empty ── */
+        .empty-state { text-align: center; padding: 36px 20px; color: #4b5563; }
+        .empty-state .ei { font-size: 34px; margin-bottom: 10px; }
+        .empty-state p { font-size: 13px; }
+
+        /* ── Skeleton loader ── */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.05) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            border-radius: 6px; height: 14px;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
+</head>
+
+<body>
+<div class="bg-grid"></div>
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-icon">🎓</div>
+        <div>
+            <div class="brand-text">College MS</div>
+            <div class="brand-sub">Student Portal</div>
+        </div>
+    </div>
+
+    <div class="nav-label">Menu</div>
+    <button class="nav-item active" onclick="showSection('dashboard')"><span class="nav-icon">🏠</span> Dashboard</button>
+    <button class="nav-item" onclick="showSection('profile')">  <span class="nav-icon">👤</span> My Profile</button>
+    <button class="nav-item" onclick="showSection('courses')">  <span class="nav-icon">📚</span> My Courses</button>
+    <button class="nav-item" onclick="showSection('attendance')"><span class="nav-icon">✅</span> Attendance</button>
+    <button class="nav-item" onclick="showSection('marks')">    <span class="nav-icon">📝</span> My Marks</button>
+    <button class="nav-item" onclick="showSection('fees')">      <span class="nav-icon">💰</span> My Fees</button>
+    <button class="nav-item" onclick="showSection('materials')"><span class="nav-icon">📖</span> Study Material</button>
+    <a href="notifications.html" class="nav-item"><span class="nav-icon">🔔</span> Notifications<span id="navUnreadBadge" class="nav-badge" style="display:none;">0</span></a>
+    <a href="Exam-Portal.html" class="nav-item"><span class="nav-icon">🧪</span> Exam Portal</a>
+    <a href="report.html" class="nav-item"><span class="nav-icon">📈</span> Reports</a>
+
+    <div class="sidebar-footer">
+        <div class="user-info">
+            <div class="user-avatar" id="avatarLetter">S</div>
+            <div>
+                <div class="user-name" id="sidebarName">Student</div>
+                <div class="user-role">Student</div>
+            </div>
+        </div>
+        <button class="btn-logout" onclick="logout()">🚪 Logout</button>
+    </div>
+</aside>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<main class="main">
+    <div id="alertBox" class="alert-box"></div>
+
+    <!-- ── DASHBOARD ── -->
+    <div id="sec-dashboard" class="section active">
+        <div class="topbar">
+            <div>
+                <div class="page-title">Dashboard 🏠</div>
+                <div class="page-sub" id="dashGreet">Welcome back!</div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📚</div>
+                <div class="stat-label">Enrolled Courses</div>
+                <div class="stat-val" id="statCourses">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-label">Overall Attendance</div>
+                <div class="stat-val" id="statAttPct">—</div>
+                <div class="stat-sub" id="statAttDetail"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📝</div>
+                <div class="stat-label">Exam Records</div>
+                <div class="stat-val" id="statMarks">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-label">Avg Score</div>
+                <div class="stat-val" id="statAvgScore">—</div>
+            </div>
+        </div>
+
+        <!-- Profile quick card -->
+        <div class="profile-card" id="dashProfile">
+            <div class="profile-avatar" id="dashAvatar">S</div>
+            <div class="profile-info">
+                <div class="p-name" id="dashName">Loading...</div>
+                <div class="p-email" id="dashEmail"></div>
+                <div class="profile-tags" id="dashTags"></div>
+            </div>
+        </div>
+
+        <!-- Recent attendance summary -->
+        <div class="panel">
+            <div class="panel-title">📊 Attendance Summary</div>
+            <div id="dashAttSummary">
+                <div class="empty-state"><div class="ei">⏳</div><p>Loading...</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── PROFILE ── -->
+    <div id="sec-profile" class="section">
+        <div class="topbar">
+            <div>
+                <div class="page-title">👤 My Profile</div>
+                <div class="page-sub">Your academic information</div>
+            </div>
+        </div>
+
+        <div class="profile-card" id="profileCard">
+            <div class="profile-avatar" id="profAvatar">S</div>
+            <div class="profile-info">
+                <div class="p-name"  id="profName">Loading...</div>
+                <div class="p-email" id="profEmail"></div>
+                <div class="profile-tags" id="profTags"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">📋 Profile Details</div>
+            <div class="table-wrap">
+                <table>
+                    <tbody id="profDetailsTbody">
+                        <tr><td colspan="2"><div class="empty-state"><div class="ei">⏳</div><p>Loading...</p></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── COMMUTE DETAILS ── -->
+        <div class="panel" id="commutePanel">
+            <div class="panel-title">🚌 Commute & Residence Details</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:20px;">
+                <div>
+                    <label class="glass-label">Residence Type</label>
+                    <div class="glass-select-wrap">
+                        <select id="commuteResidenceType" class="glass-select">
+                            <option value="">— Select —</option>
+                            <option value="Local">🏠 Local (Day Scholar)</option>
+                            <option value="Commuter">🚌 Commuter</option>
+                            <option value="Hosteler">🏢 Hosteler</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="glass-label">Home Town</label>
+                    <input type="text" id="commuteHomeTown" class="glass-input" placeholder="e.g. Surat">
+                </div>
+                <div>
+                    <label class="glass-label">Transport Route</label>
+                    <input type="text" id="commuteTransportRoute" class="glass-input" placeholder="e.g. Surat → Navsari via NH8" id="commuteTransportRoute">
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                <label class="glass-toggle">
+                    <input type="checkbox" id="commuteTransportOpted" onchange="toggleTransportRoute()">
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    <span>Transport Bus Opted</span>
+                </label>
+                <button class="glass-btn-primary glass-btn-sm" onclick="saveCommuteDetails()">💾 Save Details</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── COURSES ── -->
+    <div id="sec-courses" class="section">
+        <div class="topbar">
+            <div>
+                <div class="page-title">📚 My Courses</div>
+                <div class="page-sub">Courses you are enrolled in</div>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-title">Enrolled Courses</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>Course Code</th><th>Course Name</th><th>Department</th><th>Enrolled Date</th></tr>
+                    </thead>
+                    <tbody id="coursesTbody">
+                        <tr><td colspan="5"><div class="empty-state"><div class="ei">⏳</div><p>Loading...</p></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── ATTENDANCE ── -->
+    <div id="sec-attendance" class="section">
+        <div class="topbar">
+            <div>
+                <div class="page-title">✅ My Attendance</div>
+                <div class="page-sub">Course-wise attendance summary and detailed records</div>
+            </div>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="panel">
+            <div class="panel-title">📊 Course-wise Summary</div>
+            <div class="summary-grid" id="attSummaryGrid">
+                <div class="empty-state" style="grid-column:1/-1"><div class="ei">⏳</div><p>Loading...</p></div>
+            </div>
+        </div>
+
+        <!-- Detail table -->
+        <div class="panel">
+            <div class="panel-title">📅 Detailed Records</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>Course</th><th>Date</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="attDetailTbody">
+                        <tr><td colspan="4"><div class="empty-state"><div class="ei">⏳</div><p>Loading...</p></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MARKS ── -->
+    <div id="sec-marks" class="section">
+        <div class="topbar">
+            <div>
+                <div class="page-title">📝 My Marks</div>
+                <div class="page-sub">Exam-wise marks and percentage</div>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-title">Marks Records</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>Course</th><th>Exam Type</th><th>Obtained</th><th>Total</th><th>Percentage</th></tr>
+                    </thead>
+                    <tbody id="marksTbody">
+                        <tr><td colspan="6"><div class="empty-state"><div class="ei">⏳</div><p>Loading...</p></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MY FEES ── -->
+    <div id="sec-fees" class="section">
+        <div class="topbar">
+            <div>
+                <div class="page-title">💰 My Fees</div>
+                <div class="page-sub">Fee records, payment status and receipts</div>
+            </div>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="stats-grid" id="feeStatsGrid">
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-label">Total Fees</div>
+                <div class="stat-val" id="statTotalFees">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-label">Paid</div>
+                <div class="stat-val" id="statPaidFees" style="color:#6ee7b7;">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-label">Unpaid</div>
+                <div class="stat-val" id="statUnpaidFees" style="color:#fca5a5;">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💵</div>
+                <div class="stat-label">Total Due Amount</div>
+                <div class="stat-val" id="statDueAmount" style="font-size:18px;">—</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">📋 Fee Records</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>Description</th><th>Amount</th><th>Due Date</th><th>Status</th><th>Paid Date</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="feesTbody">
+                        <tr><td colspan="7"><div class="empty-state"><div class="ei">⏳</div><p>Loading...</p></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── STUDY MATERIAL ── -->
+    <div id="sec-materials" class="section">
+        <div class="topbar">
+            <div>
+                <div class="page-title">📖 Study Material</div>
+                <div class="page-sub">Download course materials uploaded by faculty</div>
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-title">Select Course</div>
+            <div style="max-width:400px;margin-bottom:16px;">
+                <select id="materialCourseSelect" class="form-control" onchange="loadStudyMaterials()">
+                    <option value="">— Select Course —</option>
+                </select>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>Title</th><th>Description</th><th>Type</th><th>Uploaded</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="materialsTbody">
+                        <tr><td colspan="6"><div class="empty-state"><div class="ei">📭</div><p>Select a course to view materials.</p></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<!-- ── RECEIPT MODAL ── -->
+<div class="modal fade" id="receiptModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background:#1a1f2e;border:1px solid rgba(255,255,255,.08);border-radius:16px;color:#e5e7eb;">
+      <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,.06);">
+        <h5 class="modal-title" style="font-weight:700;color:#fff;font-family:'Outfit',sans-serif;">🧾 Fee Receipt</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+      </div>
+      <div class="modal-body" style="padding:24px;">
+        <div style="background:#111827;border:1px dashed rgba(99,102,241,.3);border-radius:12px;padding:24px;">
+          <div style="text-align:center;font-size:20px;font-weight:700;color:#a5b4fc;font-family:monospace;margin-bottom:20px;" id="rcpNo">—</div>
+          <div class="rcp-row"><span>Student</span><span id="rcpStudent">—</span></div>
+          <div class="rcp-row"><span>Description</span><span id="rcpDesc">—</span></div>
+          <div class="rcp-row"><span>Amount</span><span id="rcpAmount">—</span></div>
+          <div class="rcp-row"><span>Due Date</span><span id="rcpDue">—</span></div>
+          <div class="rcp-row"><span>Paid Date</span><span id="rcpPaidDate">—</span></div>
+          <div style="text-align:center;margin-top:18px;">
+            <span style="background:rgba(16,185,129,.15);color:#6ee7b7;border:1px solid rgba(16,185,129,.3);padding:5px 16px;border-radius:20px;font-size:13px;font-weight:700;">✅ PAID</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,.06);">
+        <button style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#9ca3af;border-radius:8px;padding:9px 22px;font-family:'Outfit',sans-serif;cursor:pointer;" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SCRIPT ═══════════ -->
+<script>
+    const baseUrl = "https://localhost:7142/api";
+    const fileBaseUrl = "https://localhost:7142";
+    const token   = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user") || "Student";
+    const storedRole = localStorage.getItem("role");
+
+    if (!token || storedRole !== "Student") location.href = "Login.html";
+
+    // Sidebar name + avatar
+    $("#sidebarName").text(storedUser);
+    $("#avatarLetter").text(storedUser.charAt(0).toUpperCase());
+    $("#dashGreet").text("Welcome back, " + storedUser + "!");
+
+    function authHeader() {
+        return { "Content-Type": "application/json", "Authorization": "Bearer " + token };
+    }
+
+    function showAlert(msg, type) {
+        $("#alertBox").attr("class", "alert-box alert-" + type).text(msg).fadeIn(200);
+        setTimeout(() => $("#alertBox").fadeOut(300), 3500);
+    }
+
+    function logout() { localStorage.clear(); location.href = "Login.html"; }
+
+    // ── Section nav ──
+    const sectionMap = {
+        dashboard: 0, profile: 1, courses: 2, attendance: 3, marks: 4, fees: 5, materials: 6
+    };
+
+    function showSection(name) {
+        $(".section").removeClass("active");
+        $(".nav-item").removeClass("active");
+        $("#sec-" + name).addClass("active");
+        $(".nav-item").eq(sectionMap[name]).addClass("active");
+
+        if (name === "profile")    loadProfile();
+        if (name === "courses")    loadCourses();
+        if (name === "attendance") loadAttendance();
+        if (name === "marks")      loadMarks();
+        if (name === "fees")       loadFees();
+        if (name === "materials")  loadMaterialCourses();
+    }
+
+    // ── Percentage color helper ──
+    function pctColor(pct) {
+        if (pct >= 75) return "#6ee7b7";
+        if (pct >= 50) return "#fde68a";
+        return "#fca5a5";
+    }
+
+    function pctBarColor(pct) {
+        if (pct >= 75) return "#10b981";
+        if (pct >= 50) return "#eab308";
+        return "#ef4444";
+    }
+
+    // ── PROFILE ──
+    function loadProfile() {
+        $.ajax({
+            url: baseUrl + "/Student/profile",
+            headers: authHeader(),
+            success: function (p) {
+                const letter = p.name.charAt(0).toUpperCase();
+
+                // Sidebar
+                $("#sidebarName").text(p.name);
+                $("#avatarLetter").text(letter);
+
+                // Dashboard profile card
+                $("#dashAvatar").text(letter);
+                $("#dashName").text(p.name);
+                $("#dashEmail").text(p.email);
+                $("#dashTags").html(`
+                    <span class="tag tag-indigo">Sem ${p.semester}</span>
+                    <span class="tag tag-green">${p.department}</span>
+                    <span class="tag tag-purple">${p.enrollmentNo}</span>
+                `);
+
+                // Profile section
+                $("#profAvatar").text(letter);
+                $("#profName").text(p.name);
+                $("#profEmail").text(p.email);
+                $("#profTags").html(`
+                    <span class="tag tag-indigo">Semester ${p.semester}</span>
+                    <span class="tag tag-green">${p.department}</span>
+                    <span class="tag tag-purple">${p.enrollmentNo}</span>
+                `);
+
+                // Profile details table
+                const rows = [
+                    ["Full Name",      p.name],
+                    ["Email",          p.email],
+                    ["Enrollment No",  p.enrollmentNo],
+                    ["Semester",       `Semester ${p.semester}`],
+                    ["Department",     p.department],
+                ];
+
+                let html = rows.map(([k, v]) => `
+                    <tr>
+                        <td style="color:#9ca3af;width:160px;font-weight:500;">${k}</td>
+                        <td style="color:#e5e7eb;font-weight:600;">${v}</td>
+                    </tr>`).join("");
+                $("#profDetailsTbody").html(html);
+
+                // Populate commute fields
+                if (p.residenceType) $("#commuteResidenceType").val(p.residenceType);
+                if (p.homeTown)      $("#commuteHomeTown").val(p.homeTown);
+                $("#commuteTransportOpted").prop('checked', !!p.transportOpted);
+                if (p.transportRoute) $("#commuteTransportRoute").val(p.transportRoute);
+                toggleTransportRoute();
+            },
+            error: function () { showAlert("Failed to load profile", "error"); }
+        });
+    }
+
+    // ── COMMUTE HELPERS ──
+    function toggleTransportRoute() {
+        const opted = $("#commuteTransportOpted").is(':checked');
+        $("#commuteTransportRoute").prop('disabled', !opted)
+            .css('opacity', opted ? '1' : '0.4');
+    }
+
+    function saveCommuteDetails() {
+        const payload = {
+            residenceType:   $("#commuteResidenceType").val(),
+            homeTown:        $("#commuteHomeTown").val().trim(),
+            transportOpted:  $("#commuteTransportOpted").is(':checked'),
+            transportRoute:  $("#commuteTransportRoute").val().trim()
+        };
+        // PUT to /api/Student/profile (or /api/Admin/students/profile if admin)
+        $.ajax({
+            url: baseUrl + "/Student/profile",
+            type: "PUT",
+            contentType: "application/json",
+            headers: authHeader(),
+            data: JSON.stringify(payload),
+            success: function() { showAlert("✅ Commute details saved!", "success"); },
+            error: function(xhr) {
+                // Fallback — endpoint may not exist yet; show friendly message
+                showAlert(xhr.responseJSON?.message || "Update not available yet — backend endpoint pending.", "error");
+            }
+        });
+    }
+
+    // ── COURSES ──
+    function loadCourses() {
+        $.ajax({
+            url: baseUrl + "/Student/courses",
+            headers: authHeader(),
+            success: function (data) {
+                $("#statCourses").text(data.length);
+                if (!data.length) {
+                    $("#coursesTbody").html('<tr><td colspan="5"><div class="empty-state"><div class="ei">📭</div><p>No courses enrolled yet.</p></div></td></tr>');
+                    return;
+                }
+                let html = "";
+                data.forEach((c, i) => {
+                    const d = new Date(c.enrolledDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+                    html += `<tr>
+                        <td>${i + 1}</td>
+                        <td><span class="tag tag-indigo">${c.courseCode}</span></td>
+                        <td style="font-weight:600;">${c.courseName}</td>
+                        <td style="color:#9ca3af;">${c.department}</td>
+                        <td style="color:#6b7280;">${d}</td>
+                    </tr>`;
+                });
+                $("#coursesTbody").html(html);
+            },
+            error: function () { showAlert("Failed to load courses", "error"); }
+        });
+    }
+
+    // ── ATTENDANCE ──
+    function loadAttendance() {
+        $.ajax({
+            url: baseUrl + "/Student/attendance",
+            headers: authHeader(),
+            success: function (data) {
+                const summary = data.summary;
+                const detail  = data.detail;
+
+                // Dashboard stat
+                if (summary.length) {
+                    const totalP = summary.reduce((a, s) => a + s.present, 0);
+                    const totalC = summary.reduce((a, s) => a + s.totalClasses, 0);
+                    const overallPct = totalC ? Math.round(totalP / totalC * 100) : 0;
+                    $("#statAttPct").text(overallPct + "%").css("color", pctColor(overallPct));
+                    $("#statAttDetail").text(totalP + " / " + totalC + " classes");
+                }
+
+                // Summary cards (dashboard + attendance section)
+                let summHtml = "";
+                summary.forEach(s => {
+                    const c  = pctColor(s.percentage);
+                    const bc = pctBarColor(s.percentage);
+                    summHtml += `
+                    <div class="summary-card">
+                        <div class="sc-course">${s.course}</div>
+                        <div class="sc-row"><span class="sc-key">Total Classes</span><span class="sc-val">${s.totalClasses}</span></div>
+                        <div class="sc-row"><span class="sc-key">Present</span><span class="sc-val" style="color:#6ee7b7;">${s.present}</span></div>
+                        <div class="sc-row"><span class="sc-key">Absent</span><span class="sc-val" style="color:#fca5a5;">${s.absent}</span></div>
+                        <div style="margin-top:12px;">
+                            <div class="pct-bar-wrap">
+                                <div class="pct-bar-bg"><div class="pct-bar-fill" style="width:${s.percentage}%;background:${bc};"></div></div>
+                                <span style="font-size:12px;font-weight:700;color:${c};min-width:40px;">${s.percentage}%</span>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                if (!summHtml) summHtml = '<div class="empty-state" style="grid-column:1/-1"><div class="ei">📭</div><p>No attendance records found.</p></div>';
+                $("#attSummaryGrid, #dashAttSummary").html(
+                    summary.length
+                        ? `<div class="summary-grid">${summHtml}</div>`
+                        : summHtml
+                );
+
+                // Detailed table
+                if (!detail.length) {
+                    $("#attDetailTbody").html('<tr><td colspan="4"><div class="empty-state"><div class="ei">📭</div><p>No detailed records found.</p></div></td></tr>');
+                    return;
+                }
+                let detHtml = "";
+                detail.forEach((r, i) => {
+                    const d = new Date(r.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+                    detHtml += `<tr>
+                        <td>${i + 1}</td>
+                        <td style="font-weight:500;">${r.course}</td>
+                        <td style="color:#9ca3af;">${d}</td>
+                        <td><span class="${r.isPresent ? 'badge-present' : 'badge-absent'}">${r.isPresent ? '✅ Present' : '❌ Absent'}</span></td>
+                    </tr>`;
+                });
+                $("#attDetailTbody").html(detHtml);
+            },
+            error: function () { showAlert("Failed to load attendance", "error"); }
+        });
+    }
+
+    // ── MARKS ──
+    function loadMarks() {
+        $.ajax({
+            url: baseUrl + "/Student/marks",
+            headers: authHeader(),
+            success: function (data) {
+                // Dashboard stat
+                const total = data.length;
+                const avg   = total ? Math.round(data.reduce((a, m) => a + m.percentage, 0) / total) : 0;
+                $("#statMarks").text(total);
+                $("#statAvgScore").text(avg + "%").css("color", pctColor(avg));
+
+                if (!total) {
+                    $("#marksTbody").html('<tr><td colspan="6"><div class="empty-state"><div class="ei">📭</div><p>No marks records found.</p></div></td></tr>');
+                    return;
+                }
+
+                let html = "";
+                data.forEach((m, i) => {
+                    const c  = pctColor(m.percentage);
+                    const bc = pctBarColor(m.percentage);
+                    html += `<tr>
+                        <td>${i + 1}</td>
+                        <td style="font-weight:500;">${m.course}</td>
+                        <td><span class="tag tag-purple">${m.examType}</span></td>
+                        <td style="font-weight:700;">${m.obtainedMarks}</td>
+                        <td style="color:#6b7280;">${m.totalMarks}</td>
+                        <td>
+                            <div class="pct-bar-wrap">
+                                <div class="pct-bar-bg"><div class="pct-bar-fill" style="width:${m.percentage}%;background:${bc};"></div></div>
+                                <span style="font-size:12px;font-weight:700;color:${c};min-width:40px;">${m.percentage}%</span>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+                $("#marksTbody").html(html);
+            },
+            error: function () { showAlert("Failed to load marks", "error"); }
+        });
+    }
+
+    // ── MY FEES ──
+    function loadFees() {
+        $.ajax({
+            url: baseUrl + "/Fee/my-fees",
+            headers: authHeader(),
+            success: function (data) {
+                const total   = data.length;
+                const paid    = data.filter(f => f.isPaid).length;
+                const unpaid  = data.filter(f => !f.isPaid).length;
+                const dueAmt  = data.filter(f => !f.isPaid).reduce((a, f) => a + f.amount, 0);
+
+                $("#statTotalFees").text(total);
+                $("#statPaidFees").text(paid);
+                $("#statUnpaidFees").text(unpaid);
+                $("#statDueAmount").text(unpaid > 0 ? "₹" + dueAmt.toLocaleString("en-IN") : "Nil");
+
+                if (!total) {
+                    $("#feesTbody").html('<tr><td colspan="7"><div class="empty-state"><div class="ei">📭</div><p>No fee records found.</p></div></td></tr>');
+                    return;
+                }
+
+                let html = "";
+                data.forEach((f, i) => {
+                    const due  = new Date(f.dueDate).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" });
+                    const paid = f.paidDate ? new Date(f.paidDate).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "—";
+                    const action = f.isPaid
+                        ? `<button class="btn-receipt-s" onclick="viewReceipt(${f.feeId})">🧾 Receipt</button>`
+                        : `<button class="btn-pay" onclick="payFee(${f.feeId})">💳 Pay Now</button>`;
+
+                    html += `<tr>
+                        <td>${i+1}</td>
+                        <td style="font-weight:500;">${f.description}</td>
+                        <td style="font-weight:700;">₹${f.amount.toLocaleString("en-IN")}</td>
+                        <td style="color:#9ca3af;">${due}</td>
+                        <td><span class="${f.isPaid ? 'badge-paid' : 'badge-unpaid'}">${f.isPaid ? '✅ Paid' : '❌ Unpaid'}</span></td>
+                        <td style="color:#6b7280;">${paid}</td>
+                        <td>${action}</td>
+                    </tr>`;
+                });
+                $("#feesTbody").html(html);
+            },
+            error: function () { showAlert("Failed to load fees", "error"); }
+        });
+    }
+
+    function payFee(feeId) {
+        if (!confirm("Are you sure you want to pay this fee?")) return;
+        $.ajax({
+            url: baseUrl + "/Fee/pay/" + feeId,
+            type: "POST",
+            headers: authHeader(),
+            success: function (r) {
+                showAlert("✅ Fee paid! Receipt: " + r.receiptNumber, "success");
+                loadFees();
+            },
+            error: function (xhr) {
+                showAlert(xhr.responseJSON?.message || "Payment failed", "error");
+            }
+        });
+    }
+
+    function viewReceipt(feeId) {
+        $.ajax({
+            url: baseUrl + "/Fee/receipt/" + feeId,
+            headers: authHeader(),
+            success: function (r) {
+                $("#rcpNo").text(r.receiptNumber);
+                $("#rcpStudent").text(r.studentName);
+                $("#rcpDesc").text(r.description);
+                $("#rcpAmount").text("₹" + r.amount.toLocaleString("en-IN"));
+                $("#rcpDue").text(new Date(r.dueDate).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }));
+                $("#rcpPaidDate").text(new Date(r.paidDate).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }));
+                new bootstrap.Modal(document.getElementById("receiptModal")).show();
+            },
+            error: function () { showAlert("Could not load receipt", "error"); }
+        });
+    }
+
+    // ── STUDY MATERIAL (download only) ──
+    function loadMaterialCourses() {
+        $.ajax({
+            url: baseUrl + "/Student/courses",
+            headers: authHeader(),
+            success: function (data) {
+                const opts = `<option value="">— Select Course —</option>` +
+                    data.map(c => `<option value="${c.courseId}">${c.courseCode} — ${c.courseName}</option>`).join("");
+                $("#materialCourseSelect").html(opts);
+                if (data.length === 1) {
+                    $("#materialCourseSelect").val(data[0].courseId);
+                    loadStudyMaterials();
+                }
+            },
+            error: function () { showAlert("Failed to load courses", "error"); }
+        });
+    }
+
+    function loadStudyMaterials() {
+        const courseId = $("#materialCourseSelect").val();
+        if (!courseId) {
+            $("#materialsTbody").html('<tr><td colspan="6"><div class="empty-state"><div class="ei">📭</div><p>Select a course to view materials.</p></div></td></tr>');
+            return;
+        }
+
+        $.ajax({
+            url: baseUrl + "/StudyMaterial/course/" + courseId,
+            headers: authHeader(),
+            success: function (materials) {
+                if (!materials.length) {
+                    $("#materialsTbody").html('<tr><td colspan="6"><div class="empty-state"><div class="ei">📭</div><p>No study materials available yet.</p></div></td></tr>');
+                    return;
+                }
+
+                let html = "";
+                materials.forEach((m, i) => {
+                    const uploaded = new Date(m.uploadedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+                    const fileUrl = fileBaseUrl + m.fileUrl;
+                    html += `<tr>
+                        <td>${i + 1}</td>
+                        <td style="font-weight:600;">${m.title}</td>
+                        <td style="color:#9ca3af;">${m.description || "—"}</td>
+                        <td><span class="tag tag-indigo">${m.fileType}</span></td>
+                        <td style="color:#6b7280;">${uploaded}</td>
+                        <td><a href="${fileUrl}" target="_blank" rel="noopener" class="btn-receipt-s" style="text-decoration:none;">⬇️ Download</a></td>
+                    </tr>`;
+                });
+                $("#materialsTbody").html(html);
+            },
+            error: function () { showAlert("Failed to load study materials", "error"); }
+        });
+    }
+
+    // ── Notifications unread badge (sidebar link) ──
+    function loadNotifBadge() {
+        $.ajax({
+            url: baseUrl + "/Notification/my",
+            headers: authHeader(),
+            success: function (data) {
+                const unread = (data || []).filter(n => !n.isRead).length;
+                if (unread > 0) $("#navUnreadBadge").text(unread).show();
+                else $("#navUnreadBadge").hide();
+            }
+        });
+    }
+
+    // ── Initial load ──
+    loadProfile();
+    loadCourses();
+    loadAttendance();
+    loadMarks();
+    loadNotifBadge();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

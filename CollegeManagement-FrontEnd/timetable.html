@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="College Management System — Timetable">
+<title>Timetable — College Management System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="glass-theme.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<style>
+  body { display: flex; }
+
+  /* ── Timetable grid ── */
+  .tt-grid {
+    display: grid;
+    grid-template-columns: 90px repeat(6, 1fr);
+    gap: 2px;
+    font-size: 12px;
+  }
+  .tt-header {
+    background: rgba(99,102,241,0.15);
+    border: 1px solid rgba(99,102,241,0.25);
+    padding: 10px 6px;
+    text-align: center;
+    font-weight: 700;
+    color: #a5b4fc;
+    border-radius: 8px;
+  }
+  .tt-time {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    padding: 8px 6px;
+    text-align: right;
+    color: var(--text-muted);
+    font-size: 11px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .tt-cell {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 10px 8px;
+    border-radius: 8px;
+    min-height: 70px;
+    position: relative;
+  }
+  .tt-cell:hover { background: rgba(255,255,255,0.06); }
+  .tt-slot {
+    background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(99,102,241,0.08));
+    border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    transition: 0.2s;
+    cursor: default;
+  }
+  .tt-slot:hover { transform: scale(1.02); box-shadow: 0 4px 16px rgba(99,102,241,0.2); }
+  .tt-slot .sub  { font-weight: 700; color: #a5b4fc; margin-bottom: 3px; }
+  .tt-slot .room { color: var(--text-muted); font-size: 11px; }
+  .tt-slot .del-btn {
+    position: absolute; top: 4px; right: 4px;
+    background: rgba(239,68,68,0.15); border: none; border-radius: 4px;
+    color: #fca5a5; font-size: 11px; cursor: pointer; padding: 2px 6px;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .tt-slot:hover .del-btn { opacity: 1; }
+
+  .tt-empty { color: rgba(255,255,255,0.1); font-size: 11px; text-align: center; padding-top: 18px; }
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="glass-sidebar">
+  <div class="sb-brand">🎓</div>
+  <nav class="sb-nav" id="sbNavItems"></nav>
+  <div class="sb-bottom">
+    <div class="sb-avatar" id="sbAvatar">U</div>
+    <button class="sb-logout" onclick="logout()" title="Logout">🚪</button>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="glass-main">
+  <div class="glass-topbar">
+    <div>
+      <div class="page-heading">Timetable 🗓️</div>
+      <div class="page-sub" id="pageSubText">Weekly class schedule by department and semester</div>
+    </div>
+    <div id="adminActions" style="display:none;gap:10px;">
+      <button class="glass-btn-primary" onclick="openAddEntryModal()">➕ Add Entry</button>
+    </div>
+  </div>
+
+  <div id="alertBox" class="glass-alert"></div>
+
+  <!-- Filter Panel -->
+  <div class="glass-card card-p-md" style="margin-bottom:24px;">
+    <div class="section-title" style="margin-bottom:16px;">🔍 Filter Schedule</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
+      <div style="flex:1;min-width:180px;">
+        <label class="glass-label">Department</label>
+        <div class="glass-select-wrap">
+          <select id="filterDept" class="glass-select" onchange="loadCoursesForFilter()">
+            <option value="">— Select Department —</option>
+          </select>
+        </div>
+      </div>
+      <div style="flex:1;min-width:140px;">
+        <label class="glass-label">Semester</label>
+        <div class="glass-select-wrap">
+          <select id="filterSem" class="glass-select">
+            <option value="">— Select Sem —</option>
+            <option value="1">Semester 1</option>
+            <option value="2">Semester 2</option>
+            <option value="3">Semester 3</option>
+            <option value="4">Semester 4</option>
+            <option value="5">Semester 5</option>
+            <option value="6">Semester 6</option>
+            <option value="7">Semester 7</option>
+            <option value="8">Semester 8</option>
+          </select>
+        </div>
+      </div>
+      <button class="glass-btn-primary" onclick="loadTimetable()">🔍 Load Timetable</button>
+    </div>
+  </div>
+
+  <!-- Faculty: My Schedule -->
+  <div id="mySchedulePanel" style="display:none;margin-bottom:24px;">
+    <div class="glass-card card-p-md">
+      <div class="section-title">📅 My Teaching Schedule</div>
+      <div class="glass-table-wrap">
+        <table class="glass-table">
+          <thead><tr><th>Day</th><th>Time</th><th>Subject</th><th>Department</th><th>Semester</th><th>Room</th></tr></thead>
+          <tbody id="myScheduleTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timetable Grid -->
+  <div id="ttPanel" style="display:none;">
+    <div class="glass-card card-p-md">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+        <div class="section-title" style="margin:0" id="ttTitle">Timetable</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <div class="tt-grid" id="ttGrid"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══ ADD ENTRY MODAL ═══ -->
+<div class="modal fade" id="addEntryModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Add Timetable Entry</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="glass-label">Department</label>
+          <div class="glass-select-wrap"><select id="entryDept" class="glass-select" onchange="loadCoursesForEntry()"><option value="">— Select —</option></select></div>
+        </div>
+        <div class="form-group">
+          <label class="glass-label">Semester</label>
+          <div class="glass-select-wrap">
+            <select id="entrySem" class="glass-select">
+              <option value="">— Select —</option>
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="glass-label">Course</label>
+          <div class="glass-select-wrap"><select id="entryCourse" class="glass-select"><option value="">— Select Dept & Sem first —</option></select></div>
+        </div>
+        <div class="form-group">
+          <label class="glass-label">Day of Week</label>
+          <div class="glass-select-wrap">
+            <select id="entryDay" class="glass-select">
+              <option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
+              <option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group"><label class="glass-label">Start Time</label><input type="time" id="entryStart" class="glass-input" value="09:00"></div>
+          <div class="form-group"><label class="glass-label">End Time</label><input type="time" id="entryEnd" class="glass-input" value="10:00"></div>
+        </div>
+        <div class="form-group"><label class="glass-label">Room Number</label><input type="text" id="entryRoom" class="glass-input" placeholder="e.g. 301"></div>
+        <div class="form-group">
+          <label class="glass-label">Faculty</label>
+          <div class="glass-select-wrap"><select id="entryFaculty" class="glass-select"><option value="">— Select Faculty —</option></select></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="glass-btn-secondary glass-btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button class="glass-btn-primary glass-btn-sm" onclick="addEntry()">Add Entry 🗓️</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="glass-theme.js"></script>
+<script>
+requireAuth(['Admin','Staff','Faculty','Student']);
+
+const role = getRole();
+let deptCache = [];
+let coursesCache = [];
+const DAYS = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function buildSidebar() {
+  let nav = '';
+  if (role === 'Admin' || role === 'Staff') {
+    nav = `
+      <a class="sb-item" href="admin.html"         data-tip="Dashboard">📊</a>
+      <a class="sb-item" href="users.html"          data-tip="Users">👥</a>
+      <div class="sb-sep"></div>
+      <a class="sb-item" href="departments.html"    data-tip="Departments">🏛️</a>
+      <a class="sb-item" href="courses.html"        data-tip="Courses">📚</a>
+      <a class="sb-item" href="students.html"       data-tip="Students">🎓</a>
+      <a class="sb-item" href="Exam.html"           data-tip="Exams">📝</a>
+      <a class="sb-item" href="Fees.html"           data-tip="Fees">💰</a>
+      <a class="sb-item" href="results.html"        data-tip="Results">🏆</a>
+      <a class="sb-item" href="hostel.html"         data-tip="Hostel">🏠</a>
+      <a class="sb-item" href="recheck.html"        data-tip="Re-check">🔁</a>
+      <a class="sb-item" href="placement.html"      data-tip="Placement">💼</a>
+      <a class="sb-item active" href="timetable.html" data-tip="Timetable">🗓️</a>
+      <a class="sb-item" href="report.html"         data-tip="Reports">📈</a>`;
+  } else if (role === 'Faculty') {
+    nav = `
+      <a class="sb-item" href="Faculty.html"        data-tip="Dashboard">🏠</a>
+      <a class="sb-item" href="results.html"        data-tip="Results">🏆</a>
+      <a class="sb-item active" href="timetable.html" data-tip="Timetable">🗓️</a>`;
+  } else {
+    nav = `
+      <a class="sb-item" href="student.html"        data-tip="Dashboard">🏠</a>
+      <a class="sb-item" href="Exam-Portal.html"    data-tip="Exam Portal">🧪</a>
+      <a class="sb-item" href="results.html"        data-tip="Results">🏆</a>
+      <a class="sb-item" href="recheck.html"        data-tip="Re-check">🔁</a>
+      <a class="sb-item" href="hostel.html"         data-tip="Hostel">🏠</a>
+      <a class="sb-item" href="placement.html"      data-tip="Placement">💼</a>
+      <a class="sb-item active" href="timetable.html" data-tip="Timetable">🗓️</a>`;
+  }
+  $('#sbNavItems').html(nav);
+}
+
+buildSidebar();
+
+// ── Load departments ──
+function loadDepartments() {
+  $.ajax({
+    url: API_BASE + '/Admin/departments', headers: authHeader(),
+    success: function(d) {
+      deptCache = d || [];
+      const opts = d.map(x => `<option value="${x.departmentId}">${x.departmentName}</option>`).join('');
+      $('#filterDept,#entryDept').html('<option value="">— Select Department —</option>' + opts);
+    }
+  });
+}
+
+// ── Load courses for filter (based on dept selection) ──
+function loadCoursesForFilter() {
+  $('#filterSem').val('');
+}
+
+function loadCoursesForEntry() {
+  const deptId = $('#entryDept').val();
+  const sem    = $('#entrySem').val();
+  if (!deptId) return;
+  $.ajax({
+    url: API_BASE + `/Admin/courses?departmentId=${deptId}${sem ? '&semester=' + sem : ''}`,
+    headers: authHeader(),
+    success: d => {
+      coursesCache = d || [];
+      const opts = d.map(c => `<option value="${c.courseId}">${c.courseCode} — ${c.courseName}</option>`).join('');
+      $('#entryCourse').html('<option value="">— Select Course —</option>' + opts);
+    }
+  });
+}
+
+// Also load courses when semester changes in modal
+$('#entrySem').on('change', loadCoursesForEntry);
+
+// ── Load faculty users ──
+function loadFaculty() {
+  $.ajax({
+    url: API_BASE + '/Users', headers: authHeader(),
+    success: d => {
+      const faculty = (d||[]).filter(u => u.role === 'Faculty' || u.role === 'Staff');
+      const opts = faculty.map(u => `<option value="${u.userId}">${u.name}</option>`).join('');
+      $('#entryFaculty').html('<option value="">— Select Faculty —</option>' + opts);
+    }
+  });
+}
+
+// ── Load timetable grid ──
+function loadTimetable() {
+  const deptId = $('#filterDept').val();
+  const sem    = $('#filterSem').val();
+  if (!deptId || !sem) { toast('Select department and semester first', 'error'); return; }
+
+  $.ajax({
+    url: API_BASE + `/TimeTable/${deptId}/${sem}`, headers: authHeader(),
+    success: function(entries) {
+      renderTimetable(entries, deptId, parseInt(sem));
+    },
+    error: () => toast('Failed to load timetable','error')
+  });
+}
+
+function renderTimetable(entries, deptId, sem) {
+  const deptName = deptCache.find(d => d.departmentId == deptId)?.departmentName || 'Dept';
+  $('#ttTitle').text(`${deptName} — Semester ${sem} Timetable`);
+
+  // Collect unique time slots
+  const times = [...new Set(entries.map(e => e.startTime + '–' + e.endTime))].sort();
+
+  if (!times.length) {
+    $('#ttGrid').html('<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--text-muted);">No schedule entries yet.</div>');
+    $('#ttPanel').show();
+    return;
+  }
+
+  let html = '<div class="tt-header">Time</div>';
+  DAYS.slice(1).forEach(d => html += `<div class="tt-header">${d}</div>`);
+
+  times.forEach(timeslot => {
+    html += `<div class="tt-time">${timeslot}</div>`;
+    for (let day = 1; day <= 6; day++) {
+      const entry = entries.find(e => e.dayOfWeek === day && (e.startTime + '–' + e.endTime) === timeslot);
+      if (entry) {
+        html += `<div class="tt-cell">
+          <div class="tt-slot">
+            <div class="sub">${escHtml(entry.subject)}</div>
+            <div style="font-size:11px;color:#a5b4fc;margin-bottom:2px;">${entry.subjectCode}</div>
+            <div class="room">📍 ${entry.roomNumber || '—'}</div>
+            ${(role==='Admin'||role==='Staff') ? `<button class="del-btn" onclick="deleteEntry(${entry.entryId})">✕</button>` : ''}
+          </div>
+        </div>`;
+      } else {
+        html += `<div class="tt-cell"><div class="tt-empty">—</div></div>`;
+      }
+    }
+  });
+
+  $('#ttGrid').html(html);
+  $('#ttPanel').show();
+}
+
+// ── Faculty: My schedule ──
+function loadMySchedule() {
+  $.ajax({
+    url: API_BASE + '/TimeTable/my-schedule', headers: authHeader(),
+    success: function(data) {
+      if (!data.length) {
+        $('#myScheduleTbody').html(emptyTableRow(6,'📅','No teaching schedule assigned yet'));
+        $('#mySchedulePanel').show();
+        return;
+      }
+      let rows = '';
+      data.forEach((e,i) => {
+        rows += `<tr>
+          <td class="td-bold">${e.day}</td>
+          <td><span style="font-family:monospace;color:#a5b4fc;">${e.startTime} – ${e.endTime}</span></td>
+          <td>${escHtml(e.subject)}</td>
+          <td>${e.departmentName || '—'}</td>
+          <td>Sem ${e.semester}</td>
+          <td>${e.roomNumber || '—'}</td>
+        </tr>`;
+      });
+      $('#myScheduleTbody').html(rows);
+      $('#mySchedulePanel').show();
+    },
+    error: () => toast('Failed to load schedule','error')
+  });
+}
+
+// ── Student: Auto-load own timetable ──
+function loadStudentTimetable() {
+  $.ajax({
+    url: API_BASE + '/TimeTable/my', headers: authHeader(),
+    success: function(data) {
+      // Get dept + sem from student profile
+      $.ajax({
+        url: API_BASE + '/Student/profile', headers: authHeader(),
+        success: p => {
+          $('#filterDept').val(p.departmentId || '');
+          $('#filterSem').val(p.semester || '');
+          renderTimetable(data, p.departmentId, p.semester);
+        },
+        error: () => renderTimetable(data, 0, 0)
+      });
+    },
+    error: () => toast('No timetable found for your department/semester','error')
+  });
+}
+
+// ── Add Entry (Admin/Staff) ──
+function openAddEntryModal() {
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('addEntryModal')).show();
+}
+
+function addEntry() {
+  const data = {
+    departmentId: parseInt($('#entryDept').val()),
+    semester:     parseInt($('#entrySem').val()),
+    courseId:     parseInt($('#entryCourse').val()),
+    dayOfWeek:    parseInt($('#entryDay').val()),
+    startTime:    $('#entryStart').val(),
+    endTime:      $('#entryEnd').val(),
+    roomNumber:   $('#entryRoom').val().trim(),
+    facultyUserId: parseInt($('#entryFaculty').val()) || 0
+  };
+
+  if (!data.departmentId || !data.semester || !data.courseId) {
+    toast('Please fill all required fields','error'); return;
+  }
+  if (data.startTime >= data.endTime) {
+    toast('End time must be after start time','error'); return;
+  }
+
+  $.ajax({
+    url: API_BASE + '/TimeTable', type: 'POST',
+    contentType: 'application/json', headers: authHeader(), data: JSON.stringify(data),
+    success: r => {
+      bootstrap.Modal.getInstance(document.getElementById('addEntryModal')).hide();
+      toast(r.message || 'Entry added!');
+      if ($('#filterDept').val() == data.departmentId && $('#filterSem').val() == data.semester) {
+        loadTimetable();
+      }
+    },
+    error: xhr => toast(xhr.responseJSON?.message || 'Conflict or error','error')
+  });
+}
+
+// ── Delete Entry ──
+function deleteEntry(id) {
+  glassConfirm('Delete Entry', 'Remove this timetable slot?', () => {
+    $.ajax({
+      url: API_BASE + '/TimeTable/' + id, type: 'DELETE',
+      headers: authHeader(),
+      success: () => { toast('Entry deleted'); loadTimetable(); },
+      error: xhr => toast(xhr.responseJSON?.message || 'Failed','error')
+    });
+  }, { danger: true, btnLabel: 'Delete' });
+}
+
+function escHtml(str) {
+  const el = document.createElement('div');
+  el.appendChild(document.createTextNode(str));
+  return el.innerHTML;
+}
+
+// ── INIT ──
+loadDepartments();
+
+if (role === 'Admin' || role === 'Staff') {
+  $('#adminActions').css('display','flex');
+  loadFaculty();
+} else if (role === 'Faculty') {
+  loadMySchedule();
+} else if (role === 'Student') {
+  loadStudentTimetable();
+}
+</script>
+</body>
+</html>

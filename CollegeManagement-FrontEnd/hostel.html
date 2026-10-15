@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="College Management System — Hostel Management">
+<title>Hostel — College Management System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="glass-theme.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<style>
+  body { display: flex; }
+  .tab-nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 9px 22px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);
+    color: var(--text-muted); cursor: pointer; transition: 0.2s; font-family:'Outfit',sans-serif;
+  }
+  .tab-btn.active { background: var(--accent); color:#fff; border-color:transparent; box-shadow:0 4px 14px var(--accent-glow); }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* Hostel occupancy bar */
+  .occ-bar-bg { height:8px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;flex:1; }
+  .occ-bar-fill { height:100%;border-radius:99px;background:var(--accent);transition:width 0.6s ease; }
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="glass-sidebar">
+  <div class="sb-brand">🎓</div>
+  <nav class="sb-nav" id="sbNavItems"></nav>
+  <div class="sb-bottom">
+    <div class="sb-avatar" id="sbAvatar">U</div>
+    <button class="sb-logout" onclick="logout()" title="Logout">🚪</button>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="glass-main">
+  <div class="glass-topbar">
+    <div>
+      <div class="page-heading">Hostel Management 🏠</div>
+      <div class="page-sub" id="pageSubText">Hostel allotments, rooms and occupancy</div>
+    </div>
+    <div id="adminActions" style="display:none;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="glass-btn-secondary" onclick="openAddHostelModal()">➕ Add Hostel</button>
+      <button class="glass-btn-primary"   onclick="openAllotModal()">🛏️ Allot Room</button>
+    </div>
+  </div>
+
+  <div id="alertBox" class="glass-alert"></div>
+
+  <!-- ═══ ADMIN VIEW ═══ -->
+  <div id="adminView">
+    <!-- Occupancy stat cards -->
+    <div class="stats-grid" id="occStatCards" style="margin-bottom:24px;"></div>
+
+    <!-- Admin Tabs -->
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="showTab('hostels')">🏢 Hostels</button>
+      <button class="tab-btn" onclick="showTab('rooms')">🚪 Rooms</button>
+      <button class="tab-btn" onclick="showTab('allotments')">🛏️ Allotments</button>
+    </div>
+
+    <!-- Hostels Tab -->
+    <div class="tab-pane active" id="tab-hostels">
+      <div class="glass-card card-p-md">
+        <div class="section-title">All Hostels <span class="badge-count" id="hostelCount">—</span></div>
+        <div class="glass-table-wrap">
+          <table class="glass-table">
+            <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Total Rooms</th><th>Occupancy</th><th>Actions</th></tr></thead>
+            <tbody id="hostelTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rooms Tab -->
+    <div class="tab-pane" id="tab-rooms">
+      <div class="glass-card card-p-md">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div class="section-title" style="margin:0">All Rooms</div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <div class="glass-select-wrap" style="min-width:180px;">
+              <select id="roomHostelFilter" class="glass-select" onchange="loadRooms()">
+                <option value="">All Hostels</option>
+              </select>
+            </div>
+            <button class="glass-btn-primary glass-btn-sm" onclick="openAddRoomModal()">➕ Add Room</button>
+          </div>
+        </div>
+        <div class="glass-table-wrap">
+          <table class="glass-table">
+            <thead><tr><th>Room No</th><th>Hostel</th><th>Capacity</th><th>Occupied</th><th>Available</th><th>Status</th></tr></thead>
+            <tbody id="roomTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Allotments Tab -->
+    <div class="tab-pane" id="tab-allotments">
+      <div class="glass-card card-p-md">
+        <div class="section-title">Active Allotments</div>
+        <div id="allotmentsArea">
+          <div class="glass-spinner"><div class="spinner-ring"></div><span>Loading...</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STUDENT VIEW ═══ -->
+  <div id="studentView" style="display:none;">
+    <div class="stats-grid" style="margin-bottom:24px;" id="studentAllotCards"></div>
+    <div class="glass-card card-p-md" id="studentAllotDetail"></div>
+  </div>
+</main>
+
+<!-- ═══ ADD HOSTEL MODAL ═══ -->
+<div class="modal fade" id="addHostelModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Add Hostel</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="glass-label">Hostel Name</label><input type="text" id="hName" class="glass-input" placeholder="e.g. Boys Hostel Block A"></div>
+        <div class="form-group">
+          <label class="glass-label">Type</label>
+          <div class="glass-select-wrap"><select id="hType" class="glass-select"><option value="Boys">Boys</option><option value="Girls">Girls</option><option value="Mixed">Mixed</option></select></div>
+        </div>
+        <div class="form-group"><label class="glass-label">Total Rooms</label><input type="number" id="hRooms" class="glass-input" placeholder="50" min="1"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="glass-btn-secondary glass-btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button class="glass-btn-primary glass-btn-sm" onclick="addHostel()">Add Hostel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADD ROOM MODAL ═══ -->
+<div class="modal fade" id="addRoomModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Add Room</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="glass-label">Hostel</label>
+          <div class="glass-select-wrap"><select id="roomHostelId" class="glass-select"></select></div>
+        </div>
+        <div class="form-group"><label class="glass-label">Room Number</label><input type="text" id="roomNumber" class="glass-input" placeholder="e.g. 101"></div>
+        <div class="form-group"><label class="glass-label">Capacity</label><input type="number" id="roomCapacity" class="glass-input" placeholder="2" min="1" max="10"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="glass-btn-secondary glass-btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button class="glass-btn-primary glass-btn-sm" onclick="addRoom()">Add Room</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ALLOT ROOM MODAL ═══ -->
+<div class="modal fade" id="allotModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Allot Room to Student</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="glass-label">Student</label>
+          <div class="glass-select-wrap"><select id="allotStudentId" class="glass-select"></select></div>
+        </div>
+        <div class="form-group">
+          <label class="glass-label">Hostel (to filter rooms)</label>
+          <div class="glass-select-wrap"><select id="allotHostelFilter" class="glass-select" onchange="loadRoomsForAllot()"><option value="">— Select Hostel —</option></select></div>
+        </div>
+        <div class="form-group">
+          <label class="glass-label">Room</label>
+          <div class="glass-select-wrap"><select id="allotRoomId" class="glass-select"><option value="">— Select Room —</option></select></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="glass-btn-secondary glass-btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button class="glass-btn-primary glass-btn-sm" onclick="allotRoom()">Allot Room 🛏️</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="glass-theme.js"></script>
+<script>
+requireAuth(['Admin','Staff','Student']);
+
+const role = getRole();
+let hostelsCache = [];
+let studentsCache = [];
+let allRoomsCache = [];
+
+function showAlert(msg, type) {
+  $('#alertBox').attr('class','glass-alert glass-alert-'+type+' show').html(msg);
+  setTimeout(() => $('#alertBox').removeClass('show'), 5000);
+}
+
+// ── Build sidebar ──
+function buildSidebar() {
+  let nav = '';
+  if (role === 'Admin' || role === 'Staff') {
+    nav = `
+      <a class="sb-item" href="admin.html"         data-tip="Dashboard">📊</a>
+      <a class="sb-item" href="users.html"          data-tip="Users">👥</a>
+      <div class="sb-sep"></div>
+      <a class="sb-item" href="courses.html"        data-tip="Courses">📚</a>
+      <a class="sb-item" href="students.html"       data-tip="Students">🎓</a>
+      <a class="sb-item" href="Fees.html"           data-tip="Fees">💰</a>
+      <a class="sb-item" href="results.html"        data-tip="Results">🏆</a>
+      <a class="sb-item active" href="hostel.html"  data-tip="Hostel">🏠</a>
+      <a class="sb-item" href="recheck.html"        data-tip="Re-check">🔁</a>
+      <a class="sb-item" href="placement.html"      data-tip="Placement">💼</a>
+      <a class="sb-item" href="timetable.html"      data-tip="Timetable">🗓️</a>`;
+  } else {
+    nav = `
+      <a class="sb-item" href="student.html"         data-tip="Dashboard">🏠</a>
+      <a class="sb-item active" href="hostel.html"   data-tip="Hostel">🏠</a>
+      <a class="sb-item" href="results.html"         data-tip="Results">🏆</a>
+      <a class="sb-item" href="placement.html"       data-tip="Placement">💼</a>
+      <a class="sb-item" href="timetable.html"       data-tip="Timetable">🗓️</a>`;
+  }
+  $('#sbNavItems').html(nav);
+}
+
+// ── Tab switching ──
+function showTab(name) {
+  $('.tab-btn').removeClass('active');
+  $(`.tab-btn[onclick="showTab('${name}')"]`).addClass('active');
+  $('.tab-pane').removeClass('active');
+  $('#tab-' + name).addClass('active');
+}
+
+// ── INIT ──
+buildSidebar();
+
+if (role === 'Admin' || role === 'Staff') {
+  $('#adminView').show();
+  $('#adminActions').css('display','flex');
+  loadOccupancy();
+  loadHostels();
+  loadRooms();
+  loadStudentsForAllot();
+} else {
+  $('#adminView').hide();
+  $('#studentView').show();
+  loadStudentAllotment();
+}
+
+// ══════════════════════ ADMIN FUNCTIONS ══════════════════════
+
+function loadOccupancy() {
+  $.ajax({
+    url: API_BASE + '/Hostel/occupancy', headers: authHeader(),
+    success: function(data) {
+      let html = '';
+      let totalCap = 0, totalOcc = 0;
+      data.forEach(h => {
+        const cap = h.totalCapacity || 0;
+        const occ = h.totalOccupied || 0;
+        const pct = cap > 0 ? Math.round(occ/cap*100) : 0;
+        totalCap += cap; totalOcc += occ;
+        html += `
+        <div class="glass-stat-card">
+          <div class="stat-icon-wrap stat-icon-orange">🏢</div>
+          <div class="stat-label">${h.name} (${h.type})</div>
+          <div class="stat-value">${occ}<span style="font-size:16px;color:var(--text-muted)">/${cap}</span></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+            <div class="occ-bar-bg"><div class="occ-bar-fill" style="width:${pct}%"></div></div>
+            <span class="stat-sub">${pct}% full</span>
+          </div>
+        </div>`;
+      });
+      const overallPct = totalCap > 0 ? Math.round(totalOcc/totalCap*100) : 0;
+      html = `
+      <div class="glass-stat-card">
+        <div class="stat-icon-wrap stat-icon-teal">🏠</div>
+        <div class="stat-label">Overall Occupancy</div>
+        <div class="stat-value">${overallPct}%</div>
+        <div class="stat-sub">${totalOcc} / ${totalCap} rooms filled</div>
+      </div>` + html;
+      $('#occStatCards').html(html);
+    }
+  });
+}
+
+function loadHostels() {
+  $.ajax({
+    url: API_BASE + '/Hostel', headers: authHeader(),
+    success: function(data) {
+      hostelsCache = data;
+      $('#hostelCount').text(data.length + ' hostels');
+
+      // Populate room hostel filters
+      const opts = data.map(h => `<option value="${h.hostelId}">${h.name}</option>`).join('');
+      $('#roomHostelFilter,#roomHostelId,#allotHostelFilter').html(`<option value="">All Hostels</option>` + opts);
+      $('#allotHostelFilter').html(`<option value="">— Select Hostel —</option>` + opts);
+
+      if (!data.length) { $('#hostelTbody').html(emptyTableRow(6,'🏢','No hostels yet')); return; }
+      let rows = '';
+      data.forEach((h,i) => {
+        const cap  = h.totalRooms || 0;
+        const rmCt = h.roomCount  || 0;
+        rows += `<tr>
+          <td class="td-muted">${i+1}</td>
+          <td class="td-bold">${h.name}</td>
+          <td><span class="glass-badge badge-info">${h.type}</span></td>
+          <td>${cap}</td>
+          <td>${rmCt} rooms added</td>
+          <td>—</td>
+        </tr>`;
+      });
+      $('#hostelTbody').html(rows);
+    },
+    error: () => toast('Failed to load hostels','error')
+  });
+}
+
+function loadRooms() {
+  const hid = $('#roomHostelFilter').val();
+  const url = hid ? `${API_BASE}/Hostel/rooms?hostelId=${hid}` : `${API_BASE}/Hostel/rooms`;
+  $.ajax({
+    url, headers: authHeader(),
+    success: function(data) {
+      allRoomsCache = data;
+      if (!data.length) { $('#roomTbody').html(emptyTableRow(6,'🚪','No rooms added yet')); return; }
+      let rows = '';
+      data.forEach(r => {
+        const avail = r.availableSlots || 0;
+        const full  = avail === 0;
+        rows += `<tr>
+          <td class="td-bold">${r.roomNumber}</td>
+          <td class="td-muted">${r.hostelName}</td>
+          <td>${r.capacity}</td>
+          <td>${r.occupiedCount}</td>
+          <td>${avail}</td>
+          <td><span class="glass-badge ${full ? 'badge-danger' : 'badge-success'}">${full ? 'Full' : 'Available'}</span></td>
+        </tr>`;
+      });
+      $('#roomTbody').html(rows);
+    },
+    error: () => toast('Failed to load rooms','error')
+  });
+}
+
+function loadStudentsForAllot() {
+  $.ajax({
+    url: API_BASE + '/Admin/student-profiles', headers: authHeader(),
+    success: function(data) {
+      studentsCache = data;
+      const opts = data.map(s => `<option value="${s.studentProfileId}">${s.studentName} (${s.enrollmentNo})</option>`).join('');
+      $('#allotStudentId').html(`<option value="">— Select Student —</option>` + opts);
+    }
+  });
+}
+
+function loadRoomsForAllot() {
+  const hid = $('#allotHostelFilter').val();
+  if (!hid) { $('#allotRoomId').html('<option value="">— Select Hostel First —</option>'); return; }
+  const available = allRoomsCache.filter(r => r.hostelId == hid && (r.availableSlots || 0) > 0);
+  const opts = available.map(r => `<option value="${r.roomId}">Room ${r.roomNumber} (${r.availableSlots} slots left)</option>`).join('');
+  $('#allotRoomId').html(opts || '<option value="">No available rooms</option>');
+}
+
+// Allotments are derived from occupancy; for simplicity show hostel-level summary
+function loadAllotments() {
+  $('#allotmentsArea').html('<div class="glass-spinner"><div class="spinner-ring"></div><span>Loading...</span></div>');
+  // Could hit a custom endpoint if available; for now show occupancy details
+  $.ajax({
+    url: API_BASE + '/Hostel/occupancy', headers: authHeader(),
+    success: function(data) {
+      let html = '';
+      data.forEach(h => {
+        h.rooms.forEach(r => {
+          if (r.occupiedCount > 0) {
+            html += `<tr>
+              <td class="td-bold">${h.name}</td>
+              <td>${r.roomNumber}</td>
+              <td>${r.occupiedCount} / ${r.capacity}</td>
+              <td><button class="glass-btn-danger" style="font-size:11px;" onclick="vacateRoom(${r.roomId},'${r.roomNumber}')">🚪 Vacate</button></td>
+            </tr>`;
+          }
+        });
+      });
+      if (!html) {
+        $('#allotmentsArea').html(emptyStateHtml('🛏️','No active allotments','All rooms are currently vacant'));
+        return;
+      }
+      $('#allotmentsArea').html(`
+        <div class="glass-table-wrap">
+          <table class="glass-table">
+            <thead><tr><th>Hostel</th><th>Room</th><th>Occupancy</th><th>Action</th></tr></thead>
+            <tbody>${html}</tbody>
+          </table>
+        </div>`);
+    }
+  });
+}
+
+// Show allotments when tab clicked
+document.querySelector('.tab-btn[onclick="showTab(\'allotments\')"]').addEventListener('click', loadAllotments);
+
+function openAddHostelModal() {
+  $('#hName,#hRooms').val('');
+  $('#hType').val('Boys');
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('addHostelModal')).show();
+}
+
+function addHostel() {
+  const data = { name: $('#hName').val().trim(), type: $('#hType').val(), totalRooms: parseInt($('#hRooms').val()) };
+  if (!data.name) { toast('Hostel name is required','error'); return; }
+  $.ajax({
+    url: API_BASE + '/Hostel', type: 'POST',
+    contentType:'application/json', headers: authHeader(), data: JSON.stringify(data),
+    success: () => {
+      bootstrap.Modal.getInstance(document.getElementById('addHostelModal')).hide();
+      toast('Hostel added!'); loadHostels(); loadOccupancy();
+    },
+    error: xhr => toast(xhr.responseJSON?.message || 'Failed','error')
+  });
+}
+
+function openAddRoomModal() {
+  $('#roomNumber,#roomCapacity').val('');
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('addRoomModal')).show();
+}
+
+function addRoom() {
+  const data = { hostelId: parseInt($('#roomHostelId').val()), roomNumber: $('#roomNumber').val().trim(), capacity: parseInt($('#roomCapacity').val()) };
+  if (!data.hostelId || !data.roomNumber || !data.capacity) { toast('Fill all fields','error'); return; }
+  $.ajax({
+    url: API_BASE + '/Hostel/rooms', type: 'POST',
+    contentType:'application/json', headers: authHeader(), data: JSON.stringify(data),
+    success: () => {
+      bootstrap.Modal.getInstance(document.getElementById('addRoomModal')).hide();
+      toast('Room added!'); loadRooms(); loadOccupancy();
+    },
+    error: xhr => toast(xhr.responseJSON?.message || 'Failed','error')
+  });
+}
+
+function openAllotModal() {
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('allotModal')).show();
+}
+
+function allotRoom() {
+  const data = { studentProfileId: parseInt($('#allotStudentId').val()), roomId: parseInt($('#allotRoomId').val()) };
+  if (!data.studentProfileId || !data.roomId) { toast('Select student and room','error'); return; }
+  $.ajax({
+    url: API_BASE + '/Hostel/allot', type: 'POST',
+    contentType:'application/json', headers: authHeader(), data: JSON.stringify(data),
+    success: r => {
+      bootstrap.Modal.getInstance(document.getElementById('allotModal')).hide();
+      toast('Room alloted: ' + (r.message || 'Success')); loadRooms(); loadOccupancy();
+    },
+    error: xhr => toast(xhr.responseJSON?.message || 'Allotment failed','error')
+  });
+}
+
+function vacateRoom(allotmentId, roomNum) {
+  glassConfirm('Vacate Room', `Vacate Room <strong>${roomNum}</strong>? This will free the slot.`, () => {
+    $.ajax({
+      url: API_BASE + '/Hostel/vacate/' + allotmentId, type: 'DELETE',
+      headers: authHeader(),
+      success: () => { toast('Room vacated'); loadAllotments(); loadOccupancy(); loadRooms(); },
+      error: xhr => toast(xhr.responseJSON?.message || 'Failed','error')
+    });
+  }, { danger: true, btnLabel: 'Vacate' });
+}
+
+// ══════════════════════ STUDENT FUNCTIONS ══════════════════════
+
+function loadStudentAllotment() {
+  $.ajax({
+    url: API_BASE + '/Hostel/my-allotment', headers: authHeader(),
+    success: function(data) {
+      if (data.message) {
+        // No active allotment
+        $('#studentAllotCards').html(`
+          <div class="glass-stat-card" style="grid-column:1/-1;text-align:center;">
+            <div class="empty-icon" style="font-size:48px;margin-bottom:12px;">🏠</div>
+            <div class="stat-label">Hostel Allotment</div>
+            <div class="stat-value" style="font-size:18px;color:var(--text-muted)">Not Allotted</div>
+            <div class="stat-sub">Contact admin to request a room allotment</div>
+          </div>`);
+        $('#studentAllotDetail').html('<div class="section-title">Contact Admin</div><p style="color:var(--text-muted);font-size:14px">To request a hostel room, please contact the administration office or your department coordinator.</p>');
+        return;
+      }
+      const allotDate = fmtDate(data.allotmentDate);
+      $('#studentAllotCards').html(`
+        <div class="glass-stat-card">
+          <div class="stat-icon-wrap stat-icon-orange">🏢</div>
+          <div class="stat-label">Hostel</div>
+          <div class="stat-value" style="font-size:20px">${data.hostelName}</div>
+          <div class="stat-sub">${data.hostelType} Hostel</div>
+        </div>
+        <div class="glass-stat-card">
+          <div class="stat-icon-wrap stat-icon-teal">🚪</div>
+          <div class="stat-label">Room Number</div>
+          <div class="stat-value">${data.roomNumber}</div>
+          <div class="stat-sub">Allotted on ${allotDate}</div>
+        </div>
+        <div class="glass-stat-card">
+          <div class="stat-icon-wrap ${data.feeStatus === 'Paid' ? 'stat-icon-teal' : 'stat-icon-red'}">💰</div>
+          <div class="stat-label">Fee Status</div>
+          <div class="stat-value" style="font-size:20px">${data.feeStatus}</div>
+          <div class="stat-sub">${data.feeStatus === 'Paid' ? '✅ Cleared' : '⚠️ Pending payment'}</div>
+        </div>`);
+      $('#studentAllotDetail').html(`
+        <div class="section-title">My Allotment Details</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+          <div style="color:var(--text-muted);font-size:13px">Allotment ID</div><div style="font-weight:600">#${data.allotmentId}</div>
+          <div style="color:var(--text-muted);font-size:13px">Hostel Name</div><div style="font-weight:600">${data.hostelName}</div>
+          <div style="color:var(--text-muted);font-size:13px">Room</div><div style="font-weight:600">${data.roomNumber}</div>
+          <div style="color:var(--text-muted);font-size:13px">Allotted Date</div><div style="font-weight:600">${allotDate}</div>
+          <div style="color:var(--text-muted);font-size:13px">Fee Status</div><div>${badgeHtml(data.feeStatus)}</div>
+        </div>`);
+    },
+    error: () => showAlert('Failed to load allotment details','error')
+  });
+}
+</script>
+</body>
+</html>

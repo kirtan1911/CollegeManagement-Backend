@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Management — College Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            background: #0d1117;
+            color: #e5e7eb;
+            display: flex;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 240px;
+            min-height: 100vh;
+            background: rgba(255,255,255,.03);
+            border-right: 1px solid rgba(255,255,255,.07);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 32px;
+            padding: 0 8px;
+        }
+
+        .brand-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #6366f1, #10b981);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; flex-shrink: 0;
+        }
+
+        .brand-text { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.2; }
+        .brand-sub  { font-size: 11px; color: #6b7280; }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: #4b5563;
+            padding: 0 10px;
+            margin: 16px 0 6px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: #9ca3af;
+            font-size: 14px;
+            font-weight: 500;
+            transition: .2s;
+            margin-bottom: 2px;
+            border: none; background: none; width: 100%; text-align: left;
+            text-decoration: none;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .nav-item:hover { background: rgba(255,255,255,.05); color: #e5e7eb; }
+
+        .nav-item.active {
+            background: rgba(99,102,241,.15);
+            color: #a5b4fc;
+            border: 1px solid rgba(99,102,241,.2);
+        }
+
+        .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,.07);
+        }
+
+        .user-info {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 10px; border-radius: 10px;
+            background: rgba(255,255,255,.04);
+        }
+
+        .user-avatar {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 50%; display: flex;
+            align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; color: #fff;
+            flex-shrink: 0;
+        }
+
+        .user-name  { font-size: 13px; font-weight: 600; color: #e5e7eb; }
+        .user-role  { font-size: 11px; color: #6b7280; }
+
+        .btn-logout {
+            width: 100%; margin-top: 8px; padding: 9px;
+            background: rgba(239,68,68,.1);
+            border: 1px solid rgba(239,68,68,.2);
+            border-radius: 10px; color: #fca5a5;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: .2s;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .btn-logout:hover { background: rgba(239,68,68,.2); }
+
+        /* ── Main ── */
+        .main {
+            margin-left: 240px;
+            flex: 1;
+            padding: 32px;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 28px;
+        }
+
+        .page-title { font-size: 22px; font-weight: 700; color: #fff; }
+        .page-sub   { font-size: 13px; color: #6b7280; margin-top: 3px; }
+
+        /* ── Panel ── */
+        .panel {
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .panel-title {
+            font-size: 16px; font-weight: 600; color: #e5e7eb;
+            margin-bottom: 18px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* ── Form controls ── */
+        .form-label-c { color: #9ca3af; font-size: 13px; margin-bottom: 5px; display: block; }
+
+        .form-control, .form-select {
+            background: #111827;
+            border: 1px solid rgba(255,255,255,.1);
+            color: #fff;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: 'Outfit', sans-serif;
+            transition: .2s;
+            width: 100%;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background: #1f2937;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99,102,241,.15);
+            color: #fff; outline: none;
+        }
+
+        .form-control::placeholder { color: #4b5563; }
+        .form-select option { background: #1f2937; }
+
+        .btn-add {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            color: #fff;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99,102,241,.4);
+        }
+
+        .btn-primary-c {
+            padding: 10px 22px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none; border-radius: 10px; color: #fff;
+            font-weight: 600; font-size: 14px; cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            transition: .3s;
+        }
+
+        .btn-primary-c:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99,102,241,.4); }
+
+        .btn-action {
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: .2s;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 4px;
+        }
+
+        .btn-action-blue {
+            background: rgba(99,102,241,.15);
+            border: 1px solid rgba(99,102,241,.3);
+            color: #a5b4fc;
+        }
+        .btn-action-blue:hover { background: rgba(99,102,241,.3); }
+
+        .btn-action-green {
+            background: rgba(16,185,129,.15);
+            border: 1px solid rgba(16,185,129,.3);
+            color: #6ee7b7;
+        }
+        .btn-action-green:hover { background: rgba(16,185,129,.3); }
+
+        .btn-action-red {
+            background: rgba(239,68,68,.1);
+            border: 1px solid rgba(239,68,68,.2);
+            color: #fca5a5;
+        }
+        .btn-action-red:hover { background: rgba(239,68,68,.25); }
+
+        /* ── Table ── */
+        .table-wrap { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+        thead th {
+            background: rgba(255,255,255,.05);
+            color: #9ca3af; font-weight: 600;
+            padding: 10px 14px; text-align: left;
+            white-space: nowrap;
+        }
+
+        thead th:first-child { border-radius: 8px 0 0 8px; }
+        thead th:last-child  { border-radius: 0 8px 8px 0; }
+
+        tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); transition: .15s; }
+        tbody tr:hover { background: rgba(255,255,255,.03); }
+        tbody td { padding: 11px 14px; color: #d1d5db; vertical-align: middle; }
+
+        /* ── Modal ── */
+        .modal-content {
+            background: #1a1f2e;
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 16px;
+            color: #e5e7eb;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid rgba(255,255,255,.06);
+            padding: 18px 24px;
+        }
+
+        .modal-title {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .modal-footer {
+            border-top: 1px solid rgba(255,255,255,.06);
+        }
+
+        .btn-close {
+            filter: invert(1);
+        }
+
+        .mb-form { margin-bottom: 16px; }
+
+        .btn-save {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            color: #fff;
+            border-radius: 8px;
+            padding: 9px 22px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.1);
+            color: #9ca3af;
+            border-radius: 8px;
+            padding: 9px 22px;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+        }
+
+        .tag {
+            padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+        }
+        .tag-indigo { background: rgba(99,102,241,.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,.25); }
+        .tag-green  { background: rgba(16,185,129,.15);  color: #6ee7b7; border: 1px solid rgba(16,185,129,.25); }
+        .tag-purple { background: rgba(139,92,246,.15);  color: #c4b5fd; border: 1px solid rgba(139,92,246,.25); }
+        .tag-red    { background: rgba(239,68,68,.12);   color: #fca5a5; border: 1px solid rgba(239,68,68,.25); }
+
+        /* ── Alert ── */
+        .toast-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 260px;
+            background: #1a1f2e;
+            border: 1px solid rgba(16,185,129,.3);
+            color: #6ee7b7;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: none;
+            animation: fadeIn .3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Bg grid ── */
+        .bg-grid {
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0; pointer-events: none;
+        }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: #4b5563; }
+        .empty-state .empty-icon { font-size: 36px; margin-bottom: 12px; }
+    </style>
+</head>
+
+<body>
+    <div class="bg-grid"></div>
+
+    <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+    <aside class="sidebar" id="sidebarContainer"></aside>
+
+    <!-- ═══════════════════ MAIN ═══════════════════ -->
+    <main class="main">
+        <div class="topbar">
+            <div>
+                <div class="page-title">Exam Management 📝</div>
+                <div class="page-sub">Create, structure, and view attempts of examinations</div>
+            </div>
+            <button class="btn-add" onclick="openCreateModal()">+ Create Exam</button>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">🔍 Select Course</div>
+            <div style="max-width: 400px;">
+                <label class="form-label-c">Course</label>
+                <select id="courseSelect" class="form-select" onchange="loadExams()">
+                    <option value="">— Select Course —</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">📋 Exam Records</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Exam Title</th>
+                            <th>Exam Type</th>
+                            <th>Total Marks</th>
+                            <th>Start Date/Time</th>
+                            <th>End Date/Time</th>
+                            <th>Secret Code</th>
+                            <th>Questions</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="examTbody">
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📭</div>
+                                    <p>Select a course to load exam records.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- ═══════════════════ MODALS ═══════════════════ -->
+
+    <!-- Create Exam Modal -->
+    <div class="modal fade" id="createExamModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Exam</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-form">
+                        <label class="form-label-c">Exam Title</label>
+                        <input type="text" id="createTitle" class="form-control" placeholder="e.g. Mid Semester Exam">
+                    </div>
+                    <div class="mb-form">
+                        <label class="form-label-c">Course</label>
+                        <select id="createCourseId" class="form-select" disabled></select>
+                    </div>
+                    <div class="mb-form">
+                        <label class="form-label-c">Exam Type</label>
+                        <select id="createExamType" class="form-select">
+                            <option value="Internal1">Internal 1</option>
+                            <option value="Internal2">Internal 2</option>
+                            <option value="External">External</option>
+                        </select>
+                    </div>
+                    <div class="mb-form">
+                        <label class="form-label-c">Total Marks</label>
+                        <input type="number" id="createTotalMarks" class="form-control" placeholder="e.g. 50" min="1">
+                    </div>
+                    <div class="mb-form">
+                        <label class="form-label-c">Secret Code</label>
+                        <input type="text" id="createSecretCode" class="form-control" placeholder="e.g. SEC123" maxlength="10" style="text-transform: uppercase;">
+                    </div>
+                    <div class="mb-form">
+                        <label class="form-label-c">Start Date & Time</label>
+                        <input type="datetime-local" id="createStartDateTime" class="form-control">
+                    </div>
+                    <div class="mb-form">
+                        <label class="form-label-c">End Date & Time</label>
+                        <input type="datetime-local" id="createEndDateTime" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer p-3">
+                    <button class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn-save" onclick="submitCreateExam()">Create Exam</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Question Modal -->
+    <div class="modal fade" id="addQuestionModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add MCQ Question</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="qExamId">
+                    <div class="mb-form">
+                        <label class="form-label-c">Question Text</label>
+                        <textarea id="qText" class="form-control" rows="3" placeholder="Enter the MCQ question here..."></textarea>
+                    </div>
+                    <div class="mb-form">
+                        <label class="form-label-c">Option A</label>
+                        <input type="text" id="qOptA" class="form-control" placeholder="Option A text">
+                    </div>
+                    <div class="mb-form">
+                        <label class="form-label-c">Option B</label>
+                        <input type="text" id="qOptB" class="form-control" placeholder="Option B text">
+                    </div>
+                    <div class="mb-form">
+                        <label class="form-label-c">Option C</label>
+                        <input type="text" id="qOptC" class="form-control" placeholder="Option C text">
+                    </div>
+                    <div class="mb-form">
+                        <label class="form-label-c">Option D</label>
+                        <input type="text" id="qOptD" class="form-control" placeholder="Option D text">
+                    </div>
+                    <div class="mb-form">
+                        <label class="form-label-c">Correct Option</label>
+                        <select id="qCorrectOpt" class="form-select">
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
+                    </div>
+                    <div class="mb-form">
+                        <label class="form-label-c">Marks</label>
+                        <input type="number" id="qMarks" class="form-control" value="1" min="1" step="0.5">
+                    </div>
+                </div>
+                <div class="modal-footer p-3">
+                    <button class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn-save" onclick="submitAddQuestion()">Add Question</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Attempts Modal -->
+    <div class="modal fade" id="attemptsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="attemptsModalTitle">Exam Attempts</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="table-wrap" style="max-height: 400px; overflow-y: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Enrollment No</th>
+                                    <th>Started At</th>
+                                    <th>Submitted At</th>
+                                    <th>Obtained Score</th>
+                                    <th>Percentage</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attemptsTbody">
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="empty-state">
+                                            <div class="empty-icon">⏳</div>
+                                            <p>Loading attempts...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer p-3">
+                    <button class="btn-cancel" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-box" id="toastBox"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const baseUrl = "https://localhost:7142/api";
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role");
+        const user = localStorage.getItem("user") || "Staff";
+
+        // Auth & Role Guard
+        if (!token || (role !== "Admin" && role !== "Staff" && role !== "Faculty")) {
+            localStorage.clear();
+            location.href = "Login.html";
+        }
+
+        // ── Sidebar Setup ──
+        function renderSidebar() {
+            let sidebarContent = "";
+            const letter = user.charAt(0).toUpperCase();
+
+            if (role === "Admin") {
+                sidebarContent = `
+                <div class="sidebar-brand">
+                    <div class="brand-icon">🎓</div>
+                    <div>
+                        <div class="brand-text">College MS</div>
+                        <div class="brand-sub">Admin Panel</div>
+                    </div>
+                </div>
+                <div class="nav-section">Main</div>
+                <a href="admin.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+                <a href="users.html" class="nav-item"><span class="nav-icon">👥</span> Users</a>
+                <div class="nav-section">Management</div>
+                <a href="departments.html" class="nav-item"><span class="nav-icon">🏛️</span> Departments</a>
+                <a href="courses.html" class="nav-item"><span class="nav-icon">📚</span> Courses</a>
+                <a href="students.html" class="nav-item"><span class="nav-icon">🎓</span> Students</a>
+                <a href="Exam.html" class="nav-item active"><span class="nav-icon">📝</span> Exams</a>
+                <a href="StudyMaterial.html" class="nav-item"><span class="nav-icon">📖</span> Study Material</a>
+                `;
+            } else {
+                sidebarContent = `
+                <div class="sidebar-brand">
+                    <div class="brand-icon">🎓</div>
+                    <div>
+                        <div class="brand-text">College MS</div>
+                        <div class="brand-sub">Faculty Portal</div>
+                    </div>
+                </div>
+                <div class="nav-section">Menu</div>
+                <a href="Faculty.html?tab=dashboard" class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+                <a href="Faculty.html?tab=courses" class="nav-item"><span class="nav-icon">📚</span> Courses</a>
+                <a href="Faculty.html?tab=attendance" class="nav-item"><span class="nav-icon">✅</span> Attendance</a>
+                <a href="Faculty.html?tab=marks" class="nav-item"><span class="nav-icon">📝</span> Marks</a>
+                <a href="Faculty.html?tab=viewAttendance" class="nav-item"><span class="nav-icon">📊</span> View Attendance</a>
+                <a href="Faculty.html?tab=viewMarks" class="nav-item"><span class="nav-icon">🏆</span> View Marks</a>
+                <a href="Exam.html" class="nav-item active"><span class="nav-icon">📝</span> Exams</a>
+                <a href="StudyMaterial.html" class="nav-item"><span class="nav-icon">📖</span> Study Material</a>
+                `;
+            }
+
+            sidebarContent += `
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">${letter}</div>
+                    <div>
+                        <div class="user-name">${user}</div>
+                        <div class="user-role">${role}</div>
+                    </div>
+                </div>
+                <button class="btn-logout" onclick="logout()">🚪 Logout</button>
+            </div>
+            `;
+            $("#sidebarContainer").html(sidebarContent);
+        }
+
+        function authHeader() {
+            return { "Content-Type": "application/json", "Authorization": "Bearer " + token };
+        }
+
+        function toast(msg, ok = true) {
+            $("#toastBox").css("border-color", ok ? "rgba(16,185,129,.3)" : "rgba(239,68,68,.3)")
+                .css("color", ok ? "#6ee7b7" : "#fca5a5").text(msg).fadeIn(200);
+            setTimeout(() => $("#toastBox").fadeOut(300), 2500);
+        }
+
+        function logout() {
+            localStorage.clear();
+            location.href = "Login.html";
+        }
+
+        // ── Load Courses ──
+        function loadCourses() {
+            const endpoint = role === "Admin" ? "/Admin/courses" : "/Staff/courses";
+            $.ajax({
+                url: baseUrl + endpoint,
+                headers: authHeader(),
+                success: function (data) {
+                    let opts = `<option value="">— Select Course —</option>` + 
+                        data.map(c => `<option value="${c.courseId}">${c.courseCode} — ${c.courseName}</option>`).join("");
+                    $("#courseSelect, #createCourseId").html(opts);
+                },
+                error: function () { toast("Failed to load courses", false); }
+            });
+        }
+
+        // ── Load Exams ──
+        function loadExams() {
+            const courseId = $("#courseSelect").val();
+            if (!courseId) {
+                $("#examTbody").html(`
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-icon">📭</div>
+                                <p>Select a course to load exam records.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+
+            $.ajax({
+                url: baseUrl + "/Exam/list/" + courseId,
+                headers: authHeader(),
+                success: function (exams) {
+                    if (!exams.length) {
+                        $("#examTbody").html(`
+                            <tr>
+                                <td colspan="8">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">📂</div>
+                                        <p>No exams created for this course yet.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        `);
+                        return;
+                    }
+
+                    let rows = "";
+                    exams.forEach(e => {
+                        const start = new Date(e.startDateTime).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+                        const end = new Date(e.endDateTime).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+                        const typeTag = e.examType === "External" ? "tag-red" : "tag-indigo";
+                        const activeTag = e.isActive ? "tag-green" : "tag-red";
+                        const activeLabel = e.isActive ? "Active" : "Inactive";
+                        const secret = e.secretCode || `<span style="color:#6b7280;font-style:italic;">Secret</span>`;
+
+                        rows += `
+                        <tr>
+                            <td style="font-weight:600;color:#fff">${e.title}</td>
+                            <td><span class="tag ${typeTag}">${e.examType}</span></td>
+                            <td><strong>${e.totalMarks}</strong></td>
+                            <td style="color:#9ca3af;">${start}</td>
+                            <td style="color:#9ca3af;">${end}</td>
+                            <td><code style="background:rgba(99,102,241,.1);color:#a5b4fc;padding:3px 8px;border-radius:5px;font-size:12px;font-weight:600;">${secret}</code></td>
+                            <td><span class="tag tag-purple">${e.questionCount} Qs</span></td>
+                            <td>
+                                <button class="btn-action btn-action-blue" onclick="openAddQuestion(${e.examId})">+ Add Q</button>
+                                <button class="btn-action btn-action-green" onclick="openAttempts(${e.examId}, '${escapeHtml(e.title)}')">Attempts</button>
+                                <button class="btn-action btn-action-red" onclick="deleteExam(${e.examId})">Delete</button>
+                            </td>
+                        </tr>
+                        `;
+                    });
+                    $("#examTbody").html(rows);
+                },
+                error: function () { toast("Failed to load exams", false); }
+            });
+        }
+
+        // Helper to escape HTML tags in title parameter to prevent issues
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // ── Create Exam ──
+        function openCreateModal() {
+            const courseId = $("#courseSelect").val();
+            if (!courseId) {
+                toast("Please select a Course first!", false);
+                return;
+            }
+            $("#createCourseId").val(courseId);
+            $("#createTitle, #createTotalMarks, #createSecretCode, #createStartDateTime, #createEndDateTime").val("");
+            bootstrap.Modal.getOrCreateInstance(document.getElementById("createExamModal")).show();
+        }
+
+        function toApiDateTime(value) {
+            if (!value) return "";
+            return value.length === 16 ? value + ":00" : value;
+        }
+
+        function submitCreateExam() {
+            const startRaw = $("#createStartDateTime").val();
+            const endRaw = $("#createEndDateTime").val();
+
+            const data = {
+                title: $("#createTitle").val().trim(),
+                courseId: parseInt($("#createCourseId").val()),
+                examType: $("#createExamType").val(),
+                totalMarks: parseFloat($("#createTotalMarks").val()),
+                secretCode: $("#createSecretCode").val().trim().toUpperCase(),
+                startDateTime: toApiDateTime(startRaw),
+                endDateTime: toApiDateTime(endRaw)
+            };
+
+            if (!data.title || !data.secretCode || !data.startDateTime || !data.endDateTime || isNaN(data.totalMarks)) {
+                toast("Please fill all fields", false);
+                return;
+            }
+
+            if (new Date(startRaw) >= new Date(endRaw)) {
+                toast("End date/time must be after start date/time", false);
+                return;
+            }
+
+            $.ajax({
+                url: baseUrl + "/Exam/create",
+                type: "POST",
+                headers: authHeader(),
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function (res) {
+                    bootstrap.Modal.getInstance(document.getElementById("createExamModal")).hide();
+                    toast("✅ Exam created successfully!");
+                    loadExams();
+                },
+                error: function (xhr) {
+                    toast(xhr.responseJSON?.message || "Failed to create exam", false);
+                }
+            });
+        }
+
+        // ── Add Question ──
+        function openAddQuestion(examId) {
+            $("#qExamId").val(examId);
+            $("#qText, #qOptA, #qOptB, #qOptC, #qOptD").val("");
+            $("#qCorrectOpt").val("A");
+            $("#qMarks").val("1");
+            bootstrap.Modal.getOrCreateInstance(document.getElementById("addQuestionModal")).show();
+        }
+
+        function submitAddQuestion() {
+            const data = {
+                examId: parseInt($("#qExamId").val()),
+                questionText: $("#qText").val().trim(),
+                optionA: $("#qOptA").val().trim(),
+                optionB: $("#qOptB").val().trim(),
+                optionC: $("#qOptC").val().trim(),
+                optionD: $("#qOptD").val().trim(),
+                correctOption: $("#qCorrectOpt").val(),
+                marks: parseFloat($("#qMarks").val())
+            };
+
+            if (!data.questionText || !data.optionA || !data.optionB || !data.optionC || !data.optionD || isNaN(data.marks)) {
+                toast("Please fill all fields for the question", false);
+                return;
+            }
+
+            $.ajax({
+                url: baseUrl + "/Exam/add-question",
+                type: "POST",
+                headers: authHeader(),
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function (res) {
+                    bootstrap.Modal.getInstance(document.getElementById("addQuestionModal")).hide();
+                    toast("✅ Question added successfully!");
+                    loadExams();
+                },
+                error: function (xhr) {
+                    toast(xhr.responseJSON?.message || "Failed to add question", false);
+                }
+            });
+        }
+
+        // ── View Attempts ──
+        function openAttempts(examId, examTitle) {
+            $("#attemptsModalTitle").text(`Attempts for "${examTitle}"`);
+            $("#attemptsTbody").html(`
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-icon">⏳</div>
+                            <p>Loading attempts...</p>
+                        </div>
+                    </td>
+                </tr>
+            `);
+            bootstrap.Modal.getOrCreateInstance(document.getElementById("attemptsModal")).show();
+
+            $.ajax({
+                url: baseUrl + `/Exam/${examId}/attempts`,
+                headers: authHeader(),
+                success: function (attempts) {
+                    if (!attempts.length) {
+                        $("#attemptsTbody").html(`
+                            <tr>
+                                <td colspan="7">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">📭</div>
+                                        <p>No attempts recorded for this exam yet.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        `);
+                        return;
+                    }
+
+                    let rows = "";
+                    attempts.forEach(a => {
+                        const started = new Date(a.startedAt).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+                        const submitted = a.submittedAt 
+                            ? new Date(a.submittedAt).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) 
+                            : `<span style="color:#6b7280;font-style:italic;">N/A</span>`;
+                        const statusClass = a.isSubmitted ? "tag-green" : "tag-purple";
+                        const statusText = a.isSubmitted ? "Submitted" : "In Progress";
+                        const score = a.isSubmitted ? `<strong>${a.totalObtained}</strong> / ${a.totalMarks}` : `— / ${a.totalMarks}`;
+                        const percentage = a.isSubmitted ? `<span style="font-weight:700;">${a.percentage}%</span>` : `—`;
+
+                        rows += `
+                        <tr>
+                            <td style="font-weight:600;color:#fff">${a.studentName}</td>
+                            <td><code style="background:rgba(255,255,255,.05);color:#e5e7eb;padding:2px 6px;border-radius:4px;">${a.enrollmentNo}</code></td>
+                            <td style="color:#9ca3af;">${started}</td>
+                            <td style="color:#9ca3af;">${submitted}</td>
+                            <td>${score}</td>
+                            <td>${percentage}</td>
+                            <td><span class="tag ${statusClass}">${statusText}</span></td>
+                        </tr>
+                        `;
+                    });
+                    $("#attemptsTbody").html(rows);
+                },
+                error: function () {
+                    $("#attemptsTbody").html(`
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <div class="empty-icon">❌</div>
+                                    <p>Failed to load attempts. Check connection or authorization.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `);
+                }
+            });
+        }
+
+        // ── Delete Exam ──
+        function deleteExam(examId) {
+            if (!confirm("Are you sure you want to delete this exam? All associated questions and attempts will be deleted!")) {
+                return;
+            }
+
+            $.ajax({
+                url: baseUrl + `/Exam/${examId}`,
+                type: "DELETE",
+                headers: authHeader(),
+                success: function (res) {
+                    toast("🗑️ Exam deleted successfully");
+                    loadExams();
+                },
+                error: function (xhr) {
+                    toast(xhr.responseJSON?.message || "Failed to delete exam", false);
+                }
+            });
+        }
+
+        // ── Initialize ──
+        renderSidebar();
+        loadCourses();
+
+        // ── Modal blur handlers to fix aria-hidden focus warning ──
+        ["createExamModal", "addQuestionModal", "attemptsModal"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('hide.bs.modal', function () {
+                    if (document.activeElement && this.contains(document.activeElement)) {
+                        document.activeElement.blur();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

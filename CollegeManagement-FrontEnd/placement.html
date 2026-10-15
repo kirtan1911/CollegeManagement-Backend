@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="College Management System — Placement Management">
+<title>Placement — College Management System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="glass-theme.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<style>
+  body { display: flex; }
+  .tab-nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 9px 22px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);
+    color: var(--text-muted); cursor: pointer; transition: 0.2s; font-family:'Outfit',sans-serif;
+  }
+  .tab-btn.active { background: var(--accent); color:#fff; border-color:transparent; box-shadow:0 4px 14px var(--accent-glow); }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="glass-sidebar">
+  <div class="sb-brand">🎓</div>
+  <nav class="sb-nav" id="sbNavItems"></nav>
+  <div class="sb-bottom">
+    <div class="sb-avatar" id="sbAvatar">U</div>
+    <button class="sb-logout" onclick="logout()" title="Logout">🚪</button>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="glass-main">
+  <div class="glass-topbar">
+    <div>
+      <div class="page-heading">Placement Portal 💼</div>
+      <div class="page-sub" id="pageSubText">Company drives, applications and placement records</div>
+    </div>
+    <div id="adminActions" style="display:none;gap:10px;flex-wrap:wrap;">
+      <button class="glass-btn-primary" onclick="openAddCompanyModal()">➕ Add Company</button>
+    </div>
+  </div>
+
+  <div id="alertBox" class="glass-alert"></div>
+
+  <!-- Stat cards -->
+  <div class="stats-grid" id="placementStats" style="margin-bottom:24px;"></div>
+
+  <!-- Tabs -->
+  <div class="tab-nav" id="tabNav">
+    <button class="tab-btn active" onclick="showTab('companies')">🏢 Companies</button>
+    <button class="tab-btn" onclick="showTab('myApplications')">📋 My Applications</button>
+  </div>
+
+  <!-- Companies Tab -->
+  <div class="tab-pane active" id="tab-companies">
+    <div class="glass-card card-p-md">
+      <div class="section-title">Active Placement Drives <span class="badge-count" id="companyCount">—</span></div>
+      <div class="glass-table-wrap">
+        <table class="glass-table">
+          <thead><tr>
+            <th>#</th><th>Company</th><th>Package</th><th>Eligibility %</th><th>Drive Date</th><th>Status</th><th>Action</th>
+          </tr></thead>
+          <tbody id="companiesTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- My Applications Tab (Student / Staff view) -->
+  <div class="tab-pane" id="tab-myApplications">
+    <div class="glass-card card-p-md">
+      <div class="section-title">My Applications</div>
+      <div class="glass-table-wrap">
+        <table class="glass-table">
+          <thead><tr>
+            <th>#</th><th>Company</th><th>Package</th><th>Drive Date</th><th>Application Status</th>
+          </tr></thead>
+          <tbody id="myAppTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin: All Applications Tab -->
+  <div class="tab-pane" id="tab-allApplications">
+    <div class="glass-card card-p-md">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div class="section-title" style="margin:0">All Applications</div>
+        <div class="glass-select-wrap" style="min-width:200px;">
+          <select id="appCompanyFilter" class="glass-select" onchange="loadAllApplications()">
+            <option value="">All Companies</option>
+          </select>
+        </div>
+      </div>
+      <div class="glass-table-wrap">
+        <table class="glass-table">
+          <thead><tr>
+            <th>#</th><th>Student</th><th>Enrollment No</th><th>Company</th><th>Status</th><th>Action</th>
+          </tr></thead>
+          <tbody id="allAppTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Placed Students Tab -->
+  <div class="tab-pane" id="tab-placed">
+    <div class="glass-card card-p-md">
+      <div class="section-title">Placed Students 🎉</div>
+      <div class="glass-table-wrap">
+        <table class="glass-table">
+          <thead><tr>
+            <th>#</th><th>Student</th><th>Enrollment No</th><th>Company</th><th>Package</th><th>Placed Date</th>
+          </tr></thead>
+          <tbody id="placedTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══ ADD COMPANY MODAL ═══ -->
+<div class="modal fade" id="addCompanyModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Add Company</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="glass-label">Company Name</label><input type="text" id="cName" class="glass-input" placeholder="e.g. Infosys"></div>
+        <div class="form-group"><label class="glass-label">Package (LPA)</label><input type="number" id="cPackage" class="glass-input" placeholder="e.g. 6.5" min="0" step="0.1"></div>
+        <div class="form-group"><label class="glass-label">Min. CGPA Eligibility</label><input type="number" id="cCgpa" class="glass-input" placeholder="e.g. 6.0" min="0" max="10" step="0.1"></div>
+        <div class="form-group"><label class="glass-label">Drive Date</label><input type="date" id="cDriveDate" class="glass-input"></div>
+        <div class="form-group"><label class="glass-label">Description</label><textarea id="cDesc" class="glass-input" rows="3" placeholder="Job role, requirements, location..."></textarea></div>
+      </div>
+      <div class="modal-footer">
+        <button class="glass-btn-secondary glass-btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button class="glass-btn-primary glass-btn-sm" onclick="addCompany()">Add Company 💼</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="glass-theme.js"></script>
+<script>
+requireAuth(['Admin','Staff','Faculty','Student']);
+
+const role = getRole();
+let companiesCache = [];
+
+function showAlert(msg, type) {
+  $('#alertBox').attr('class','glass-alert glass-alert-'+type+' show').html(msg);
+  setTimeout(() => $('#alertBox').removeClass('show'), 5000);
+}
+
+// ── Build sidebar ──
+function buildSidebar() {
+  let nav = '';
+  if (role === 'Admin' || role === 'Staff') {
+    nav = `
+      <a class="sb-item" href="admin.html"         data-tip="Dashboard">📊</a>
+      <a class="sb-item" href="users.html"          data-tip="Users">👥</a>
+      <div class="sb-sep"></div>
+      <a class="sb-item" href="departments.html"    data-tip="Departments">🏛️</a>
+      <a class="sb-item" href="courses.html"        data-tip="Courses">📚</a>
+      <a class="sb-item" href="students.html"       data-tip="Students">🎓</a>
+      <a class="sb-item" href="Exam.html"           data-tip="Exams">📝</a>
+      <a class="sb-item" href="Fees.html"           data-tip="Fees">💰</a>
+      <a class="sb-item" href="results.html"        data-tip="Results">🏆</a>
+      <a class="sb-item" href="hostel.html"         data-tip="Hostel">🏠</a>
+      <a class="sb-item" href="recheck.html"        data-tip="Re-check">🔁</a>
+      <a class="sb-item active" href="placement.html" data-tip="Placement">💼</a>
+      <a class="sb-item" href="timetable.html"      data-tip="Timetable">🗓️</a>
+      <a class="sb-item" href="report.html"         data-tip="Reports">📈</a>`;
+  } else {
+    nav = `
+      <a class="sb-item" href="student.html"         data-tip="Dashboard">🏠</a>
+      <a class="sb-item" href="Exam-Portal.html"     data-tip="Exam Portal">🧪</a>
+      <a class="sb-item" href="results.html"         data-tip="Results">🏆</a>
+      <a class="sb-item" href="recheck.html"         data-tip="Re-check">🔁</a>
+      <a class="sb-item" href="hostel.html"          data-tip="Hostel">🏠</a>
+      <a class="sb-item active" href="placement.html" data-tip="Placement">💼</a>
+      <a class="sb-item" href="timetable.html"       data-tip="Timetable">🗓️</a>`;
+  }
+  $('#sbNavItems').html(nav);
+}
+
+// ── Tab switching ──
+function showTab(name) {
+  $('.tab-btn').removeClass('active');
+  $(`.tab-btn[onclick="showTab('${name}')"]`).addClass('active');
+  $('.tab-pane').removeClass('active');
+  $('#tab-' + name).addClass('active');
+
+  if (name === 'myApplications') loadMyApplications();
+  if (name === 'allApplications') loadAllApplications();
+  if (name === 'placed') loadPlacedStudents();
+}
+
+// ── Init ──
+buildSidebar();
+
+// Admin gets extra tabs
+if (role === 'Admin' || role === 'Staff') {
+  $('#adminActions').css('display','flex');
+  $('#tabNav').append(`
+    <button class="tab-btn" onclick="showTab('allApplications')">📁 All Applications</button>
+    <button class="tab-btn" onclick="showTab('placed')">🎉 Placed Students</button>
+  `);
+}
+
+loadCompanies();
+loadStats();
+
+// ── Stats ──
+function loadStats() {
+  $.ajax({
+    url: API_BASE + '/Placement/placed-students', headers: authHeader(),
+    success: d => {
+      $('#placementStats').html(`
+        <div class="glass-stat-card">
+          <div class="stat-icon-wrap stat-icon-teal">🎉</div>
+          <div class="stat-label">Students Placed</div>
+          <div class="stat-value">${(d||[]).length}</div>
+        </div>`);
+    }
+  });
+}
+
+// ── Companies ──
+function loadCompanies() {
+  $.ajax({
+    url: API_BASE + '/Placement/companies', headers: authHeader(),
+    success: function(data) {
+      companiesCache = data || [];
+      $('#companyCount').text(data.length + ' drives');
+
+      // Populate admin app filter
+      const opts = data.map(c => `<option value="${c.companyId}">${c.companyName}</option>`).join('');
+      $('#appCompanyFilter').html('<option value="">All Companies</option>' + opts);
+
+      if (!data.length) { $('#companiesTbody').html(emptyTableRow(7,'💼','No placement drives yet')); return; }
+      let rows = '';
+      data.forEach((c,i) => {
+        const driveDate = fmtDate(c.driveDate);
+        const isActive = c.isActive !== false;
+        rows += `<tr>
+          <td class="td-muted">${i+1}</td>
+          <td class="td-bold">${escHtml(c.companyName)}</td>
+          <td>${c.packageLPA ? c.packageLPA + ' LPA' : '—'}</td>
+          <td>${c.minCgpa ?? '—'}</td>
+          <td>${driveDate}</td>
+          <td>${badgeHtml(isActive ? 'Active' : 'Inactive')}</td>
+          <td>
+            ${role === 'Student'
+              ? `<button class="glass-btn-primary glass-btn-sm" onclick="applyCompany(${c.companyId})">Apply 🚀</button>`
+              : `<button class="glass-btn-secondary glass-btn-sm" onclick="loadCompanyApplications(${c.companyId})">View Apps</button>`}
+          </td>
+        </tr>`;
+      });
+      $('#companiesTbody').html(rows);
+    },
+    error: () => toast('Failed to load companies','error')
+  });
+}
+
+// ── Apply (Student) ──
+function applyCompany(companyId) {
+  $.ajax({
+    url: API_BASE + '/Placement/apply', type: 'POST',
+    contentType: 'application/json', headers: authHeader(),
+    data: JSON.stringify({ companyId }),
+    success: r => toast(r.message || 'Applied successfully!'),
+    error: xhr => toast(xhr.responseJSON?.message || 'Application failed','error')
+  });
+}
+
+// ── My Applications (Student) ──
+function loadMyApplications() {
+  $('#myAppTbody').html(emptyTableRow(5,'⏳','Loading...'));
+  $.ajax({
+    url: API_BASE + '/Placement/my-applications', headers: authHeader(),
+    success: function(data) {
+      if (!data.length) { $('#myAppTbody').html(emptyTableRow(5,'📭','No applications yet')); return; }
+      let rows = '';
+      data.forEach((a,i) => {
+        rows += `<tr>
+          <td class="td-muted">${i+1}</td>
+          <td class="td-bold">${escHtml(a.companyName || '—')}</td>
+          <td>${a.packageLPA ? a.packageLPA + ' LPA' : '—'}</td>
+          <td>${fmtDate(a.driveDate)}</td>
+          <td>${badgeHtml(a.status)}</td>
+        </tr>`;
+      });
+      $('#myAppTbody').html(rows);
+    },
+    error: () => toast('Failed to load applications','error')
+  });
+}
+
+// ── All Applications (Admin/Staff) ──
+function loadAllApplications() {
+  const companyId = $('#appCompanyFilter').val();
+  const url = companyId
+    ? `${API_BASE}/Placement/applications/${companyId}`
+    : `${API_BASE}/Placement/applications/0`;
+
+  $('#allAppTbody').html(emptyTableRow(6,'⏳','Loading...'));
+  $.ajax({
+    url, headers: authHeader(),
+    success: function(data) {
+      if (!data.length) { $('#allAppTbody').html(emptyTableRow(6,'📭','No applications found')); return; }
+      let rows = '';
+      data.forEach((a,i) => {
+        rows += `<tr>
+          <td class="td-muted">${i+1}</td>
+          <td class="td-bold">${escHtml(a.studentName || '—')}</td>
+          <td>${a.enrollmentNo || '—'}</td>
+          <td>${escHtml(a.companyName || '—')}</td>
+          <td>${badgeHtml(a.status)}</td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="glass-btn-primary glass-btn-sm" onclick="updateStatus(${a.applicationId},'Shortlisted')">Shortlist</button>
+              <button class="glass-btn-secondary glass-btn-sm" onclick="updateStatus(${a.applicationId},'Selected')">Select</button>
+              <button class="glass-btn-danger glass-btn-sm" onclick="updateStatus(${a.applicationId},'Rejected')">Reject</button>
+            </div>
+          </td>
+        </tr>`;
+      });
+      $('#allAppTbody').html(rows);
+    },
+    error: () => toast('Failed to load applications','error')
+  });
+}
+
+function loadCompanyApplications(companyId) {
+  showTab('allApplications');
+  $('#appCompanyFilter').val(companyId);
+  loadAllApplications();
+}
+
+function updateStatus(appId, status) {
+  $.ajax({
+    url: API_BASE + '/Placement/status', type: 'PUT',
+    contentType: 'application/json', headers: authHeader(),
+    data: JSON.stringify({ applicationId: appId, status }),
+    success: r => { toast(r.message || 'Status updated'); loadAllApplications(); },
+    error: xhr => toast(xhr.responseJSON?.message || 'Update failed','error')
+  });
+}
+
+// ── Placed Students ──
+function loadPlacedStudents() {
+  $('#placedTbody').html(emptyTableRow(6,'⏳','Loading...'));
+  $.ajax({
+    url: API_BASE + '/Placement/placed-students', headers: authHeader(),
+    success: function(data) {
+      if (!data.length) { $('#placedTbody').html(emptyTableRow(6,'📭','No placed students yet')); return; }
+      let rows = '';
+      data.forEach((p,i) => {
+        rows += `<tr>
+          <td class="td-muted">${i+1}</td>
+          <td class="td-bold">${escHtml(p.studentName || '—')}</td>
+          <td>${p.enrollmentNo || '—'}</td>
+          <td>${escHtml(p.companyName || '—')}</td>
+          <td>${p.packageLPA ? p.packageLPA + ' LPA' : '—'}</td>
+          <td>${fmtDate(p.placedDate)}</td>
+        </tr>`;
+      });
+      $('#placedTbody').html(rows);
+    },
+    error: () => toast('Failed to load placed students','error')
+  });
+}
+
+// ── Add Company (Admin) ──
+function openAddCompanyModal() {
+  $('#cName,#cPackage,#cCgpa,#cDesc').val('');
+  $('#cDriveDate').val(new Date().toISOString().split('T')[0]);
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('addCompanyModal')).show();
+}
+
+function addCompany() {
+  const data = {
+    companyName: $('#cName').val().trim(),
+    packageLPA: parseFloat($('#cPackage').val()) || 0,
+    minCgpa: parseFloat($('#cCgpa').val()) || 0,
+    driveDate: $('#cDriveDate').val(),
+    description: $('#cDesc').val().trim()
+  };
+  if (!data.companyName) { toast('Company name is required','error'); return; }
+  $.ajax({
+    url: API_BASE + '/Placement/companies', type: 'POST',
+    contentType: 'application/json', headers: authHeader(), data: JSON.stringify(data),
+    success: r => {
+      bootstrap.Modal.getInstance(document.getElementById('addCompanyModal')).hide();
+      toast(r.message || 'Company added!'); loadCompanies(); loadStats();
+    },
+    error: xhr => toast(xhr.responseJSON?.message || 'Failed','error')
+  });
+}
+
+// ── XSS-safe HTML escape ──
+function escHtml(str) {
+  const el = document.createElement('div');
+  el.appendChild(document.createTextNode(str));
+  return el.innerHTML;
+}
+</script>
+</body>
+</html>

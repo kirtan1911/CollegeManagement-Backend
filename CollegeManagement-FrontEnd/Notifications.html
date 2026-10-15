@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Management System — Notifications</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            background: #0d1117;
+            color: #e5e7eb;
+            display: flex;
+        }
+
+        /* ── BG grid ── */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, .02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, .02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 240px;
+            min-height: 100vh;
+            background: rgba(255, 255, 255, .03);
+            border-right: 1px solid rgba(255, 255, 255, .07);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 16px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 32px;
+            padding: 0 8px;
+        }
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #6366f1, #10b981);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .brand-text {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .brand-sub {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: #4b5563;
+            padding: 0 10px;
+            margin: 16px 0 6px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: #9ca3af;
+            font-size: 14px;
+            font-weight: 500;
+            transition: .2s;
+            margin-bottom: 2px;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: 'Outfit', sans-serif;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, .05);
+            color: #e5e7eb;
+        }
+
+        .nav-item.active {
+            background: rgba(99, 102, 241, .15);
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, .2);
+        }
+
+        .nav-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: #ef4444;
+            color: #fff;
+            font-size: 10.5px;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 1px 7px;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, .07);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, .04);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e5e7eb;
+        }
+
+        .user-role {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .btn-logout {
+            width: 100%;
+            margin-top: 8px;
+            padding: 9px;
+            background: rgba(239, 68, 68, .1);
+            border: 1px solid rgba(239, 68, 68, .2);
+            border-radius: 10px;
+            color: #fca5a5;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: .2s;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, .2);
+        }
+
+        /* ── Main ── */
+        .main {
+            margin-left: 240px;
+            flex: 1;
+            padding: 32px;
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .page-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+        }
+
+        .page-sub {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 3px;
+        }
+
+        .unread-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 7px;
+            background: #6366f1;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 999px;
+            margin-left: 10px;
+        }
+
+        .btn-mark-all {
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 10px;
+            color: #e5e7eb;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: .25s;
+            white-space: nowrap;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .btn-mark-all:hover {
+            background: rgba(99, 102, 241, .15);
+            border-color: #6366f1;
+            transform: translateY(-1px);
+        }
+
+        .btn-mark-all:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── Filter chips ── */
+        .filter-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+
+        .filter-chip {
+            padding: 7px 16px;
+            border-radius: 999px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, .1);
+            background: rgba(255, 255, 255, .04);
+            color: #9ca3af;
+            transition: .2s;
+        }
+
+        .filter-chip:hover {
+            color: #e5e7eb;
+        }
+
+        .filter-chip.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-color: transparent;
+            color: #fff;
+        }
+
+        /* ── Panel wrapper (consistent with other pages) ── */
+        .panel {
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid rgba(255, 255, 255, .07);
+            border-radius: 16px;
+            padding: 10px;
+        }
+
+        /* ── Notification cards ── */
+        .notif-card {
+            position: relative;
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid rgba(255, 255, 255, .06);
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            transition: .2s;
+        }
+
+        .notif-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .notif-card:hover {
+            border-color: rgba(255, 255, 255, .15);
+            background: rgba(255, 255, 255, .045);
+        }
+
+        .notif-card.unread {
+            border-left: 3px solid #6366f1;
+            background: rgba(99, 102, 241, .07);
+        }
+
+        .notif-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .notif-icon.type-info { background: rgba(99, 102, 241, .15); }
+        .notif-icon.type-success { background: rgba(16, 185, 129, .15); }
+        .notif-icon.type-warning { background: rgba(245, 158, 11, .15); }
+        .notif-icon.type-error,
+        .notif-icon.type-alert { background: rgba(239, 68, 68, .15); }
+        .notif-icon.type-default { background: rgba(156, 163, 175, .15); }
+
+        .notif-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notif-title {
+            color: #f3f4f6;
+            font-size: 14.5px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .notif-msg {
+            color: #9ca3af;
+            font-size: 13px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .notif-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .notif-time {
+            color: #4b5563;
+            font-size: 11.5px;
+        }
+
+        .type-badge {
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: .03em;
+            padding: 3px 9px;
+            border-radius: 999px;
+            text-transform: uppercase;
+        }
+
+        .type-badge.type-info { background: rgba(99, 102, 241, .15); color: #a5b4fc; }
+        .type-badge.type-success { background: rgba(16, 185, 129, .15); color: #6ee7b7; }
+        .type-badge.type-warning { background: rgba(245, 158, 11, .15); color: #fcd34d; }
+        .type-badge.type-error,
+        .type-badge.type-alert { background: rgba(239, 68, 68, .15); color: #fca5a5; }
+        .type-badge.type-default { background: rgba(156, 163, 175, .15); color: #d1d5db; }
+
+        .unread-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #6366f1;
+            flex-shrink: 0;
+            margin-top: 6px;
+            box-shadow: 0 0 8px rgba(99, 102, 241, .6);
+        }
+
+        .mark-read-btn {
+            background: none;
+            border: none;
+            color: #6366f1;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .mark-read-btn:hover {
+            color: #818cf8;
+            text-decoration: underline;
+        }
+
+        /* ── Empty / loading ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #4b5563;
+        }
+
+        .empty-state .ei {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+
+        .empty-state h3 {
+            color: #d1d5db;
+            font-size: 15px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+        }
+
+        .skeleton-row {
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid rgba(255, 255, 255, .06);
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 14px;
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .09) 50%, rgba(255, 255, 255, .05) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            border-radius: 6px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ── Alert ── */
+        .alert-box {
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, .1);
+            border: 1px solid rgba(239, 68, 68, .3);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, .1);
+            border: 1px solid rgba(16, 185, 129, .3);
+            color: #6ee7b7;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-grid"></div>
+
+    <!-- ═══════════ SIDEBAR ═══════════ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">🎓</div>
+            <div>
+                <div class="brand-text">College MS</div>
+                <div class="brand-sub" id="sidebarPanelLabel">Panel</div>
+            </div>
+        </div>
+
+        <div class="nav-label">Main</div>
+        <div id="navLinks"><!-- populated by JS based on role --></div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="avatarLetter">U</div>
+                <div>
+                    <div class="user-name" id="sidebarName">User</div>
+                    <div class="user-role" id="sidebarRole">—</div>
+                </div>
+            </div>
+            <button class="btn-logout" onclick="logout()">🚪 Logout</button>
+        </div>
+    </aside>
+
+    <!-- ═══════════ MAIN ═══════════ -->
+    <main class="main">
+        <div id="alertBox" class="alert-box"></div>
+
+        <div class="topbar">
+            <div>
+                <div class="page-title">🔔 Notifications<span id="unreadPill" class="unread-pill" style="display:none">0</span></div>
+                <div class="page-sub">Stay up to date with your activity</div>
+            </div>
+            <button class="btn-mark-all" id="markAllBtn" onclick="markAllRead()">Mark all as read</button>
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-chip active" data-filter="all" onclick="setFilter('all')">All</div>
+            <div class="filter-chip" data-filter="unread" onclick="setFilter('unread')">Unread</div>
+            <div class="filter-chip" data-filter="read" onclick="setFilter('read')">Read</div>
+        </div>
+
+        <div class="panel">
+            <div id="listWrap">
+                <div class="skeleton-row"><div class="skeleton" style="width:38px;height:38px;border-radius:10px;"></div><div style="flex:1;"><div class="skeleton" style="height:14px;width:40%;margin-bottom:8px;"></div><div class="skeleton" style="height:12px;width:70%;"></div></div></div>
+                <div class="skeleton-row"><div class="skeleton" style="width:38px;height:38px;border-radius:10px;"></div><div style="flex:1;"><div class="skeleton" style="height:14px;width:30%;margin-bottom:8px;"></div><div class="skeleton" style="height:12px;width:60%;"></div></div></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const baseUrl = "https://localhost:7142/api";
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role");
+        const storedUser = localStorage.getItem("user") || "User";
+
+        // ── Role → dashboard / nav config ──
+        const roleConfig = {
+            Admin: {
+                dashboard: "admin.html",
+                login: "login.html",
+                panelLabel: "Admin Panel",
+                avatarGradient: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                nav: [
+                    { href: "admin.html", icon: "📊", label: "Dashboard" },
+                    { href: "users.html", icon: "👥", label: "Users" },
+                    { href: "notifications.html", icon: "🔔", label: "Notifications", active: true },
+                    { href: "departments.html", icon: "🏛️", label: "Departments" },
+                    { href: "courses.html", icon: "📚", label: "Courses" },
+                    { href: "students.html", icon: "🎓", label: "Students" },
+                    { href: "Exam.html", icon: "📝", label: "Exams" },
+                    { href: "StudyMaterial.html", icon: "📖", label: "Study Material" },
+                    { href: "Fees.html", icon: "💰", label: "Fees" }
+                ]
+            },
+            Student: {
+                dashboard: "student.html",
+                login: "Login.html",
+                panelLabel: "Student Portal",
+                avatarGradient: "linear-gradient(135deg, #10b981, #059669)",
+                nav: [
+                    { href: "student.html", icon: "🏠", label: "Dashboard" },
+                    { href: "notifications.html", icon: "🔔", label: "Notifications", active: true },
+                    { href: "Exam-Portal.html", icon: "🧪", label: "Exam Portal" }
+                ]
+            },
+            Faculty: {
+                dashboard: "Faculty.html",
+                login: "Login.html",
+                panelLabel: "Faculty Panel",
+                avatarGradient: "linear-gradient(135deg, #f59e0b, #d97706)",
+                nav: [
+                    { href: "Faculty.html", icon: "🏠", label: "Dashboard" },
+                    { href: "notifications.html", icon: "🔔", label: "Notifications", active: true }
+                ]
+            }
+        };
+
+        const cfg = roleConfig[role];
+
+        if (!token || !cfg) {
+            // Unknown/no role — safest fallback is the login page
+            location.href = "Login.html";
+        }
+
+        // ── Build sidebar based on role ──
+        $("#sidebarPanelLabel").text(cfg.panelLabel);
+        $("#sidebarName").text(storedUser);
+        $("#sidebarRole").text(role);
+        $("#avatarLetter").text(storedUser.charAt(0).toUpperCase());
+        $(".user-avatar").css("background", cfg.avatarGradient);
+
+        let navHtml = "";
+        cfg.nav.forEach(item => {
+            navHtml += `<a href="${item.href}" class="nav-item ${item.active ? 'active' : ''}">
+                <span class="nav-icon">${item.icon}</span> ${item.label}
+                ${item.label === 'Notifications' ? '<span class="nav-badge" id="navUnreadBadge" style="display:none;">0</span>' : ''}
+            </a>`;
+        });
+        $("#navLinks").html(navHtml);
+
+        let allNotifications = [];
+        let currentFilter = "all";
+
+        function authHeader() {
+            return { "Authorization": "Bearer " + token };
+        }
+
+        function showAlert(msg, type) {
+            $("#alertBox").attr("class", "alert-box alert-" + type).text(msg).fadeIn(200);
+            setTimeout(() => $("#alertBox").fadeOut(300), 3500);
+        }
+
+        function logout() {
+            localStorage.clear();
+            location.href = cfg.login;
+        }
+
+        function timeAgo(dateStr) {
+            const date = new Date(dateStr);
+            const seconds = Math.floor((new Date() - date) / 1000);
+            if (seconds < 60) return "Just now";
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return minutes + "m ago";
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return hours + "h ago";
+            const days = Math.floor(hours / 24);
+            if (days < 7) return days + "d ago";
+            return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+        }
+
+        function typeClass(type) {
+            const t = (type || "").toLowerCase();
+            if (["info", "success", "warning", "error", "alert"].includes(t)) return "type-" + t;
+            return "type-default";
+        }
+
+        function typeIcon(type) {
+            const t = (type || "").toLowerCase();
+            switch (t) {
+                case "success": return "✅";
+                case "warning": return "⚠️";
+                case "error":
+                case "alert": return "🚨";
+                case "info": return "ℹ️";
+                default: return "🔔";
+            }
+        }
+
+        function escapeHtml(str) {
+            return $("<div>").text(str || "").html();
+        }
+
+        function loadNotifications() {
+            $.ajax({
+                url: baseUrl + "/Notification/my",
+                type: "GET",
+                headers: authHeader(),
+                success: function (data) {
+                    allNotifications = data || [];
+                    render();
+                },
+                error: function (xhr) {
+                    if (xhr.status === 401) {
+                        showAlert("Session expired. Please login again.", "error");
+                        setTimeout(() => location.href = cfg.login, 1500);
+                    } else {
+                        $("#listWrap").html('<div class="empty-state"><div class="ei">⚠️</div><h3>Could not load notifications</h3><p>' + escapeHtml(xhr.responseText || "Something went wrong. Check the API connection.") + '</p></div>');
+                    }
+                }
+            });
+        }
+
+        function setFilter(f) {
+            currentFilter = f;
+            $(".filter-chip").removeClass("active");
+            $(".filter-chip[data-filter='" + f + "']").addClass("active");
+            render();
+        }
+
+        function render() {
+            const unreadCount = allNotifications.filter(n => !n.isRead).length;
+
+            if (unreadCount > 0) {
+                $("#unreadPill").text(unreadCount).show();
+                $("#navUnreadBadge").text(unreadCount).show();
+                $("#markAllBtn").prop("disabled", false);
+            } else {
+                $("#unreadPill").hide();
+                $("#navUnreadBadge").hide();
+                $("#markAllBtn").prop("disabled", true);
+            }
+
+            let list = allNotifications;
+            if (currentFilter === "unread") list = list.filter(n => !n.isRead);
+            else if (currentFilter === "read") list = list.filter(n => n.isRead);
+
+            if (list.length === 0) {
+                $("#listWrap").html(
+                    '<div class="empty-state">' +
+                    '<div class="ei">📭</div>' +
+                    '<h3>No notifications here</h3>' +
+                    '<p>' + (currentFilter === "all" ? "You're all caught up." : "Nothing in this filter right now.") + '</p>' +
+                    '</div>'
+                );
+                return;
+            }
+
+            let html = "";
+            list.forEach(function (n) {
+                const tClass = typeClass(n.type);
+                html += '<div class="notif-card ' + (n.isRead ? "" : "unread") + '">';
+                if (!n.isRead) html += '<div class="unread-dot"></div>';
+                html += '<div class="notif-icon ' + tClass + '">' + typeIcon(n.type) + '</div>';
+                html += '<div class="notif-body">';
+                html += '<div class="notif-title">' + escapeHtml(n.title) + '</div>';
+                html += '<div class="notif-msg">' + escapeHtml(n.message) + '</div>';
+                html += '<div class="notif-meta">';
+                html += '<span class="type-badge ' + tClass + '">' + escapeHtml(n.type || "General") + '</span>';
+                html += '<span class="notif-time">' + timeAgo(n.createdAt) + '</span>';
+                if (!n.isRead) {
+                    html += '<button class="mark-read-btn" onclick="markRead(' + n.notificationId + ')">Mark as read</button>';
+                }
+                html += '</div></div></div>';
+            });
+
+            $("#listWrap").html(html);
+        }
+
+        function markRead(id) {
+            $.ajax({
+                url: baseUrl + "/Notification/read/" + id,
+                type: "PUT",
+                headers: authHeader(),
+                success: function () {
+                    const n = allNotifications.find(x => x.notificationId === id);
+                    if (n) n.isRead = true;
+                    render();
+                },
+                error: function (xhr) {
+                    showAlert(xhr.responseText || "Could not mark as read", "error");
+                }
+            });
+        }
+
+        function markAllRead() {
+            $.ajax({
+                url: baseUrl + "/Notification/read-all",
+                type: "PUT",
+                headers: authHeader(),
+                success: function (r) {
+                    allNotifications.forEach(n => n.isRead = true);
+                    render();
+                    showAlert((r && r.message) || "All notifications marked as read.", "success");
+                },
+                error: function (xhr) {
+                    showAlert(xhr.responseText || "Could not mark all as read", "error");
+                }
+            });
+        }
+
+        loadNotifications();
+    </script>
+</body>
+
+</html>

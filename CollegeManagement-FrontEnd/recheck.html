@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="College Management System — Re-evaluation / Re-check Requests">
+<title>Re-check Requests — College Management System</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="glass-theme.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<style>
+  body { display: flex; }
+  .tab-nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 9px 22px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);
+    color: var(--text-muted); cursor: pointer; transition: 0.2s; font-family:'Outfit',sans-serif;
+  }
+  .tab-btn.active { background: var(--accent); color:#fff; border-color:transparent; box-shadow:0 4px 14px var(--accent-glow); }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="glass-sidebar">
+  <div class="sb-brand">🎓</div>
+  <nav class="sb-nav" id="sbNavItems"></nav>
+  <div class="sb-bottom">
+    <div class="sb-avatar" id="sbAvatar">U</div>
+    <button class="sb-logout" onclick="logout()" title="Logout">🚪</button>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="glass-main">
+  <div class="glass-topbar">
+    <div>
+      <div class="page-heading">Re-check Requests 🔁</div>
+      <div class="page-sub">Submit or manage exam re-evaluation requests</div>
+    </div>
+  </div>
+
+  <div id="alertBox" class="glass-alert"></div>
+
+  <!-- ═════════ STUDENT VIEW ═════════ -->
+  <div id="studentView" style="display:none;">
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="showStudentTab('submit')">📝 Submit Request</button>
+      <button class="tab-btn" onclick="showStudentTab('myreqs')">📋 My Requests</button>
+    </div>
+
+    <!-- Submit Tab -->
+    <div class="tab-pane active" id="stab-submit">
+      <div class="glass-card card-p-md" style="max-width:640px;">
+        <div class="section-title" style="margin-bottom:20px;">📝 Submit Re-check Request</div>
+
+        <div class="form-group">
+          <label class="glass-label">Select Exam</label>
+          <div class="glass-select-wrap">
+            <select id="recheckExamId" class="glass-select">
+              <option value="">— Loading your attempts... —</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="glass-label">Reason for Re-check</label>
+          <textarea id="recheckReason" class="glass-textarea" placeholder="Describe why you think your marks need re-evaluation..."></textarea>
+        </div>
+
+        <div class="glass-alert glass-alert-warn show" style="margin-bottom:16px;">
+          ⚠️ Re-check requests can only be submitted within <strong>7 days</strong> of the exam being submitted.
+        </div>
+
+        <button class="glass-btn-primary" onclick="submitRecheck()">Submit Request →</button>
+      </div>
+    </div>
+
+    <!-- My Requests Tab -->
+    <div class="tab-pane" id="stab-myreqs">
+      <div class="glass-card card-p-md">
+        <div class="section-title">My Re-check Requests <span class="badge-count" id="myReqCount">—</span></div>
+        <div class="glass-table-wrap">
+          <table class="glass-table">
+            <thead><tr><th>Exam</th><th>Subject</th><th>Old Marks</th><th>New Marks</th><th>Status</th><th>Submitted</th><th>Processed</th></tr></thead>
+            <tbody id="myReqTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ ADMIN/STAFF/FACULTY VIEW ═════════ -->
+  <div id="adminView" style="display:none;">
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="showAdminTab('pending')">⏳ Pending Requests</button>
+      <button class="tab-btn" onclick="showAdminTab('all')">📋 All Requests</button>
+    </div>
+
+    <!-- Pending Tab -->
+    <div class="tab-pane active" id="atab-pending">
+      <div class="glass-card card-p-md">
+        <div class="section-title">Pending Re-check Requests <span class="badge-count" id="pendingCount">—</span></div>
+        <div class="glass-table-wrap">
+          <table class="glass-table">
+            <thead><tr><th>Student</th><th>Enroll No</th><th>Exam</th><th>Subject</th><th>Old Marks</th><th>Reason</th><th>Submitted</th><th>Action</th></tr></thead>
+            <tbody id="pendingTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- All Requests Tab — (same data but unfiltered; reuse pending call with status filter in future) -->
+    <div class="tab-pane" id="atab-all">
+      <div class="glass-card card-p-md">
+        <div class="glass-empty"><div class="empty-icon">🔍</div><div class="empty-title">Filter coming soon</div><div class="empty-sub">Use Pending tab for now</div></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══ PROCESS MODAL ═══ -->
+<div class="modal fade" id="processModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Process Re-check Request</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="processReqId">
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:16px;padding:16px;margin-bottom:18px;" id="processInfo"></div>
+
+        <div class="form-group">
+          <label class="glass-label">New Marks <span style="color:var(--text-subtle)">(leave blank if rejecting)</span></label>
+          <input type="number" id="processNewMarks" class="glass-input" placeholder="Enter corrected marks" min="0">
+        </div>
+        <div class="form-group">
+          <label class="glass-label">Decision</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="glass-btn-primary glass-btn-sm" onclick="processRecheck('Approved')">✅ Approve</button>
+            <button class="glass-btn-danger" style="border-radius:999px;padding:6px 18px;" onclick="processRecheck('Rejected')">❌ Reject</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="glass-btn-secondary glass-btn-sm" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="glass-theme.js"></script>
+<script>
+requireAuth(['Admin','Staff','Faculty','Student']);
+
+const role = getRole();
+
+function showAlert(msg, type) {
+  $('#alertBox').attr('class','glass-alert glass-alert-'+type+' show').html(msg);
+  setTimeout(() => $('#alertBox').removeClass('show'), 6000);
+}
+
+// Sidebar
+function buildSidebar() {
+  let nav = '';
+  if (role === 'Admin' || role === 'Staff' || role === 'Faculty') {
+    nav = `
+      <a class="sb-item" href="admin.html"           data-tip="Dashboard">📊</a>
+      <a class="sb-item" href="results.html"         data-tip="Results">🏆</a>
+      <a class="sb-item active" href="recheck.html"  data-tip="Re-check">🔁</a>
+      <a class="sb-item" href="report.html"          data-tip="Reports">📈</a>`;
+  } else {
+    nav = `
+      <a class="sb-item" href="student.html"         data-tip="Dashboard">🏠</a>
+      <a class="sb-item" href="Exam-Portal.html"     data-tip="Exam Portal">🧪</a>
+      <a class="sb-item" href="results.html"         data-tip="Results">🏆</a>
+      <a class="sb-item active" href="recheck.html"  data-tip="Re-check">🔁</a>`;
+  }
+  $('#sbNavItems').html(nav);
+}
+
+function showStudentTab(name) {
+  $('#studentView .tab-btn').removeClass('active');
+  $(`#studentView .tab-btn[onclick="showStudentTab('${name}')"]`).addClass('active');
+  $('#studentView .tab-pane').removeClass('active');
+  $('#stab-' + name).addClass('active');
+  if (name === 'myreqs') loadMyRequests();
+}
+
+function showAdminTab(name) {
+  $('#adminView .tab-btn').removeClass('active');
+  $(`#adminView .tab-btn[onclick="showAdminTab('${name}')"]`).addClass('active');
+  $('#adminView .tab-pane').removeClass('active');
+  $('#atab-' + name).addClass('active');
+}
+
+buildSidebar();
+
+if (role === 'Student') {
+  $('#studentView').show();
+  loadStudentAttempts();
+} else {
+  $('#adminView').show();
+  loadPendingRequests();
+}
+
+// ══════════ STUDENT FUNCTIONS ══════════
+
+function loadStudentAttempts() {
+  $.ajax({
+    url: API_BASE + '/Exam/my-attempts', headers: authHeader(),
+    success: function(data) {
+      const submitted = data.filter(a => a.isSubmitted);
+      if (!submitted.length) {
+        $('#recheckExamId').html('<option value="">No submitted exams found</option>');
+        return;
+      }
+      const opts = submitted.map(a => `<option value="${a.examId}">${a.examTitle} (${a.examType}) — ${a.totalObtained}/${a.totalMarks}</option>`).join('');
+      $('#recheckExamId').html('<option value="">— Select Exam —</option>' + opts);
+    },
+    error: () => $('#recheckExamId').html('<option value="">Error loading attempts</option>')
+  });
+}
+
+function submitRecheck() {
+  const examId = parseInt($('#recheckExamId').val());
+  const reason = $('#recheckReason').val().trim();
+  if (!examId) { showAlert('Please select an exam','error'); return; }
+  if (!reason) { showAlert('Please provide a reason for re-check','error'); return; }
+
+  $.ajax({
+    url: API_BASE + '/Recheck/request', type: 'POST',
+    contentType: 'application/json', headers: authHeader(),
+    data: JSON.stringify({ examId, reason }),
+    success: function(r) {
+      toast('Re-check request submitted!');
+      $('#recheckReason').val(''); $('#recheckExamId').val('');
+      showStudentTab('myreqs');
+    },
+    error: function(xhr) {
+      // Show Gujarati backend message in glass alert (7-day window, duplicate, etc.)
+      const msg = xhr.responseJSON?.message || 'Request failed.';
+      showAlert(msg, 'error');
+    }
+  });
+}
+
+function loadMyRequests() {
+  $('#myReqTbody').html(emptyTableRow(7,'⏳','Loading...'));
+  $.ajax({
+    url: API_BASE + '/Recheck/my-requests', headers: authHeader(),
+    success: function(data) {
+      $('#myReqCount').text(data.length + ' requests');
+      if (!data.length) { $('#myReqTbody').html(emptyTableRow(7,'📭','No re-check requests yet')); return; }
+      let rows = '';
+      data.forEach(r => {
+        const stCls = r.status === 'Approved' ? 'badge-success' : r.status === 'Rejected' ? 'badge-danger' : 'badge-warning';
+        rows += `<tr>
+          <td class="td-bold">${r.examTitle}</td>
+          <td class="td-muted">${r.subject}</td>
+          <td>${r.oldMarks ?? '—'}</td>
+          <td>${r.newMarks ?? '—'}</td>
+          <td><span class="glass-badge ${stCls}">${r.status}</span></td>
+          <td class="td-muted">${fmtDate(r.requestDate)}</td>
+          <td class="td-muted">${fmtDate(r.processedDate)}</td>
+        </tr>`;
+      });
+      $('#myReqTbody').html(rows);
+    },
+    error: () => $('#myReqTbody').html(emptyTableRow(7,'⚠️','Failed to load'))
+  });
+}
+
+// ══════════ ADMIN FUNCTIONS ══════════
+
+function loadPendingRequests() {
+  $('#pendingTbody').html(emptyTableRow(8,'⏳','Loading...'));
+  $.ajax({
+    url: API_BASE + '/Recheck/pending', headers: authHeader(),
+    success: function(data) {
+      $('#pendingCount').text(data.length + ' pending');
+      if (!data.length) { $('#pendingTbody').html(emptyTableRow(8,'✅','No pending requests')); return; }
+      let rows = '';
+      data.forEach(r => {
+        rows += `<tr>
+          <td class="td-bold">${r.studentName}</td>
+          <td class="td-muted">${r.enrollmentNo}</td>
+          <td>${r.examTitle}</td>
+          <td class="td-muted">${r.subject}</td>
+          <td><strong>${r.oldMarks ?? '—'}</strong></td>
+          <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.reason || ''}">${r.reason || '—'}</td>
+          <td class="td-muted">${fmtDate(r.requestDate)}</td>
+          <td>
+            <button class="glass-btn-primary glass-btn-sm"
+              onclick="openProcessModal(${r.requestId},'${r.studentName.replace(/'/g,"\\'")}','${r.examTitle.replace(/'/g,"\\'")}',${r.oldMarks||0})">
+              ⚙️ Process
+            </button>
+          </td>
+        </tr>`;
+      });
+      $('#pendingTbody').html(rows);
+    },
+    error: () => $('#pendingTbody').html(emptyTableRow(8,'⚠️','Failed to load'))
+  });
+}
+
+function openProcessModal(reqId, studentName, examTitle, oldMarks) {
+  $('#processReqId').val(reqId);
+  $('#processNewMarks').val('');
+  $('#processInfo').html(`
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Student</div>
+    <div style="font-weight:700;color:var(--text-primary);margin-bottom:10px">${studentName}</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Exam</div>
+    <div style="font-weight:600;margin-bottom:10px">${examTitle}</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Current Marks</div>
+    <div style="font-size:24px;font-weight:700;color:var(--accent-start)">${oldMarks}</div>`);
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('processModal')).show();
+}
+
+function processRecheck(status) {
+  const reqId    = parseInt($('#processReqId').val());
+  const newMarks = status === 'Approved' ? parseFloat($('#processNewMarks').val()) : null;
+  if (status === 'Approved' && (isNaN(newMarks) || newMarks < 0)) {
+    toast('Enter valid new marks for approval','error'); return;
+  }
+  const payload = { status, newMarks: status === 'Approved' ? newMarks : null };
+
+  $.ajax({
+    url: API_BASE + '/Recheck/process/' + reqId, type: 'PUT',
+    contentType: 'application/json', headers: authHeader(),
+    data: JSON.stringify(payload),
+    success: function(r) {
+      bootstrap.Modal.getInstance(document.getElementById('processModal')).hide();
+      toast(r.message || `Request ${status}!`);
+      loadPendingRequests();
+    },
+    error: xhr => toast(xhr.responseJSON?.message || 'Failed','error')
+  });
+}
+</script>
+</body>
+</html>
